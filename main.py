@@ -4,6 +4,10 @@
 # https://github.com/Rapptz/discord.py/tree/rewrite see the readme file for more information
 # python3 -m pip install -U https://github.com/Rapptz/discord.py/archive/master.zip#egg=discord.py[voice]
 
+# docs
+# http://discordpy.readthedocs.io/en/rewrite/
+# http://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html
+
 # also may need to install libffi-dev, python-dev/python3.5-dev with apt-get
 # or equivalent editor
 
@@ -12,6 +16,7 @@ from discord.ext import commands
 import asyncio
 # configuration files
 import configparser
+import sys, traceback
 
 # load configuration to get around hard coded tokens
 config = configparser.ConfigParser()
@@ -21,25 +26,27 @@ config.read_file(open('config.ini'))
 print('discordpy')
 print(discord.__version__)
 
-# use a commands bot instead of discord client because this offers utility functions
-# that do work for the client
-client = commands.Bot(command_prefix='_', description='This is a test or something.')
+client = commands.Bot(command_prefix='-', description='https://github.com/Chris-Johnston/CssBot-Py')
 
-async def invalid_command():
-    print('invalid command')
+# this is where extensions are added by default
+default_extensions = ['cogs.basic']
+
+if __name__ == '__main__':
+    for extension in default_extensions:
+        try:
+            client.load_extension(extension)
+            #client.add_cog(extension)
+        except Exception as e:
+            print(f'Failed to load extension {extension}.', file=sys.stderr)
+            traceback.print_exc()
+
 
 @client.event
 async def on_ready():
-    print('Logged in as', client.user.name)
-    # set the current game
-    # set the url to the repo. the url doesn't appear to do anything, meant for streamers
-    await client.change_presence(
-        game=discord.Game(name='test game', url='https://github.com/Chris-Johnston/CssBot-Py')
-    )
-
-@client.event
-async def on_message(message):
-    print('got a message')
+    # print some stuff when the bot goes online
+    print(f'Logged in {client.user.name} - {client.user.id}\nVersion {discord.__version__}')
+    await client.change_presence(game=discord.Game(name='test game'))
 
 # now actually connect the bot
-client.run(config.get(section='Configuration', option='connection_token'))
+client.run(config.get(section='Configuration', option='connection_token'),
+           bot=True, reconnect=True)
