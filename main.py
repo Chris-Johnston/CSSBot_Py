@@ -8,7 +8,7 @@
 # http://discordpy.readthedocs.io/en/rewrite/
 # http://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html
 
-# also may need to install libffi-dev, python-dev/python3.5-dev with apt-get
+# also may need to install libffi-dev, python-dev/python3.6-dev with apt-get
 # or equivalent editor
 
 import discord
