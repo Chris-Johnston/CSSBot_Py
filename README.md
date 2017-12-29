@@ -1,4 +1,5 @@
 # CSSBot_Py
+[![Build Status](https://travis-ci.org/Chris-Johnston/CSSBot_Py.svg?branch=master)](https://travis-ci.org/Chris-Johnston/CSSBot_Py)
 A bot for the CSS discord server, written in Python 3.6 using [discord.py](https://github.com/Rapptz/discord.py).
 
 See also [CSSBot](https://github.com/Chris-Johnston/CSSBot), same idea just in C#.
