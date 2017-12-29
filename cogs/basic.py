@@ -16,13 +16,13 @@ class BasicCog:
 
     # echo command
     @commands.command(name='echo')
-    async def echo(self, ctx, *, message):
+    async def echo(self, ctx, *, message='_echo_'):
         await ctx.send(f'{ctx.author.mention} : {message}')
 
     # github command
     @commands.command(name='github')
     async def github(self, ctx):
-        await ctx.send(f'https://github.com/Chris-Johnston/CssBot-Py')
+        await ctx.send(f'https://github.com/Chris-Johnston/CSSBot_Py')
 
 # add this cog to the bot
 def setup(bot):

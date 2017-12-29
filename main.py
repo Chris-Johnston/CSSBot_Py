@@ -1,4 +1,4 @@
-# https://github.com/Chris-Johnston/CssBot-Py
+# https://github.com/Chris-Johnston/CSSBot_Py
 
 # using the development version from the rewrite branch
 # https://github.com/Rapptz/discord.py/tree/rewrite see the readme file for more information
