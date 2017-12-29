@@ -2,7 +2,7 @@
 
 # using the development version from the rewrite branch
 # https://github.com/Rapptz/discord.py/tree/rewrite see the readme file for more information
-# python3 -m pip install -U https://github.com/Rapptz/discord.py/archive/master.zip#egg=discord.py[voice]
+# python3.6 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
 
 # docs
 # http://discordpy.readthedocs.io/en/rewrite/
