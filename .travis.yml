@@ -1,0 +1,7 @@
+language: python
+python:
+  - "3.6"
+install:
+  - python3.6 -m pip install -U pylint
+script:
+  find . -iname "*.py" | xargs python3.6 -m pylint
