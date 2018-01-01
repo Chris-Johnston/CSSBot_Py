@@ -20,16 +20,18 @@ import sys, traceback
 
 # load configuration to get around hard coded tokens
 config = configparser.ConfigParser()
-config.read_file(open('config.ini'))
+with open('config.ini') as config_file:
+    config.read_file(config_file)
 
 # startup stuff
 print('discordpy')
 print(discord.__version__)
 
-client = commands.Bot(command_prefix='-', description='https://github.com/Chris-Johnston/CssBot-Py')
+client = commands.Bot(command_prefix='__', description='https://github.com/Chris-Johnston/CssBot-Py')
 
 # this is where extensions are added by default
-default_extensions = ['cogs.basic']
+default_extensions = ['cogs.basic',
+                      'cogs.courseInfo']
 
 if __name__ == '__main__':
     for extension in default_extensions:
@@ -45,7 +47,7 @@ if __name__ == '__main__':
 async def on_ready():
     # print some stuff when the bot goes online
     print(f'Logged in {client.user.name} - {client.user.id}\nVersion {discord.__version__}')
-    await client.change_presence(game=discord.Game(name='test game'))
+    await client.change_presence(game=discord.Game(name='Try __help'))
 
 # now actually connect the bot
 client.run(config.get(section='Configuration', option='connection_token'),
