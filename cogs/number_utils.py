@@ -1,4 +1,6 @@
-# discord bot cog that is used for various number utility functions
+"""
+discord bot cog that is used for various number utility functions
+"""
 import discord
 from discord.ext import commands
 
@@ -6,18 +8,19 @@ class NumberUtilsCog:
     def __init__(self, bot):
         self.bot = bot
 
-    # convert command
-    # converts the supplied number to various bases
-    # this assumes decimal, unless it is a string that has
-    # a prefix of 0x 0b or 0o
     @commands.command()
     async def convert(self, ctx, num):
+        """Convert command
+        Converts the supplied number to various bases
+        This assumes decimal for no prefix given,
+        if there is a prefix given it will use the
+        supplied prefix."""
         if isinstance(num, str):
-            if(str(num).lower().startswith('0b')):
+            if str(num).lower().startswith('0b'):
                 num = int(num, 2)
-            elif (str(num).lower().startswith('0x')):
+            elif str(num).lower().startswith('0x'):
                 num = int(num, 16)
-            elif (str(num).lower().startswith('0o')):
+            elif str(num).lower().startswith('0o'):
                 num = int(num, 8)
             else:
                 num = int(num)
@@ -26,16 +29,22 @@ class NumberUtilsCog:
 
     @commands.command()
     async def from_hex(self, ctx, num: str):
-        # from hexadecimal
+        """Converts the supplied hexadecimal number"""
         await ctx.send(get_conversions(int(num, 16)))
 
     @commands.command()
     async def from_bin(self, ctx, num: str):
-        # from binary
+        """Converts the supplied binary number"""
         await ctx.send(get_conversions(int(num, 2)))
 
 def setup(bot):
+    """Sets up the cog"""
     bot.add_cog(NumberUtilsCog(bot))
 
 def get_conversions(number: int):
-    return f"```\nDec:    {number}\n" + f"Hex:    {hex(number)}\n" + f"Bin:    {bin(number)}\n" + f"Oct:    {oct(number)}```"
+    """Gets a string for output that has all of the conversions."""
+    ret = f"```\nDec:    {number}\n" +\
+          f"Hex:    {hex(number)}\n" +\
+          f"Bin:    {bin(number)}\n" +\
+          f"Oct:    {oct(number)}```"
+    return ret
