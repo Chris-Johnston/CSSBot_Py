@@ -31,7 +31,8 @@ client = commands.Bot(command_prefix='__', description='https://github.com/Chris
 
 # this is where extensions are added by default
 default_extensions = ['cogs.basic',
-                      'cogs.courseInfo']
+                      'cogs.courseInfo',
+                      'cogs.number_utils']
 
 if __name__ == '__main__':
     for extension in default_extensions:
