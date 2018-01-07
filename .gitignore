@@ -2,6 +2,12 @@
 # this should never be committed, this is where your connection token goes
 config.ini
 
+# course description files
+# these should be omitted because it's not my information and could
+# change depending on time
+coursedescriptions.html
+courses.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
