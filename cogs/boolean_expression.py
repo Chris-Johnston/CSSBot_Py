@@ -55,6 +55,10 @@ class BooleanExpr:
             elif char == ')':
                 while self.get_top(self.op_stack) != '(':
                     self.process_an_op()
+                    if self.get_top(self.op_stack) == -1:
+                        self.error = True
+                        self.error_msg = "Unbalanced paren: )"
+                        return
                 if self.op_stack:
                     self.op_stack.pop()
             # OR operator
@@ -75,6 +79,9 @@ class BooleanExpr:
         if self.error == True:
             return
         while self.op_stack and len(self.var_stack) > 1:
+            if self.get_top(self.op_stack) == '(':
+                self.error = True
+                self.error_msg = "Unbalanced paren: ("
             self.process_an_op()
 
     def process_char(self, char):
@@ -106,7 +113,7 @@ class BooleanExpr:
                 return
             self.var_stack.pop()
             self.var_stack.pop()
-            self.var_stack.append("something")
+            self.var_stack.append("NUL")
 
 ######################################################################
 ######################################################################
@@ -126,6 +133,8 @@ class BooleanExpr:
         self.recurse_through_var(vars, var_dict, var_num + 1)
         var_dict[vars[var_num]] = True
         self.recurse_through_var(vars, var_dict, var_num + 1)
+        self.result_formatted += "+" + "---+" * len(vars)
+        self.result_formatted += "-" * len(self.orig_exp) + "--+\n"
 
     def recurse_through_var(self, vars, var_dict, depth):
         if depth >= len(self.var_set):
@@ -166,13 +175,13 @@ class BooleanExpr:
         # print("Single result: {}".format(post_stack.pop()))
 
     def format_header(self, vars):
-        self.result_formatted += "----" * len(vars)
-        self.result_formatted += "-" * len(self.orig_exp) + "----\n"
+        self.result_formatted += "+" + "---+" * len(vars)
+        self.result_formatted += "-" * len(self.orig_exp) + "--+\n"
         for var in vars:
             self.result_formatted += "| {} ".format(var)
         self.result_formatted += "| {} |\n".format(self.orig_exp)
-        self.result_formatted += "----" * len(vars)
-        self.result_formatted += "-" * len(self.orig_exp) + "----\n"
+        self.result_formatted += "+---" * len(vars)
+        self.result_formatted += "+" + "-" * len(self.orig_exp) + "--+\n"
 
     def format_result(self, result, dict_bool, vars):
         for var in vars:
@@ -181,9 +190,23 @@ class BooleanExpr:
             else:
                 booly = 0
             self.result_formatted += "| {} ".format(booly)
-        self.result_formatted += "| {}\n".format(result)
+        if result == True:
+            res = 1
+        else:
+            res = 0
+        self.result_formatted += "| {}".format(res)
+        self.result_formatted += " " * len(self.orig_exp) + "|\n"
+
+    def valid_vars(self):
+        for i in range(1, len(self.orig_exp)):
+            if self.orig_exp[i].isalpha() and self.orig_exp[i - 1].isalpha():
+                return False
+        return True
 
     def get_truth_table(self):
+        if not self.valid_vars():
+            self.error = True
+            self.error_msg = "Cannot have two variables in a row..."
         if self.error == True:
             return "The expression: {}, is invalid!\n{}".format(self.orig_exp,
                                                                 self.error_msg)
@@ -200,9 +223,11 @@ if __name__ == '__main__':
     exp = "A+C"
     exp_obj = BooleanExpr(exp)
     print(exp_obj.get_truth_table())
+
     exp = "A*C"
     exp_obj = BooleanExpr(exp)
     print(exp_obj.get_truth_table())
+
     exp = "A^C+!(A * C)"
     exp_obj = BooleanExpr(exp)
     print(exp_obj.get_truth_table())
@@ -210,6 +235,23 @@ if __name__ == '__main__':
     exp = "A+!B*C+!A*C*!D"
     exp_obj_2 = BooleanExpr(exp)
     print(exp_obj_2.get_truth_table())
+
     exp = "A^C++!(A * C)"
+    exp_obj = BooleanExpr(exp)
+    print(exp_obj.get_truth_table())
+
+    exp = "A^C+!((A * C)"
+    exp_obj = BooleanExpr(exp)
+    print(exp_obj.get_truth_table())
+
+    exp = "A^C)++!(A * C))"
+    exp_obj = BooleanExpr(exp)
+    print(exp_obj.get_truth_table())
+
+    exp = "A^C++!(A * C))"
+    exp_obj = BooleanExpr(exp)
+    print(exp_obj.get_truth_table())
+
+    exp = "ABCD"
     exp_obj = BooleanExpr(exp)
     print(exp_obj.get_truth_table())
