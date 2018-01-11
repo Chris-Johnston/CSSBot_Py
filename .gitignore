@@ -164,3 +164,6 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+# Vim temp files
+.*.swp
+.*.swo
