@@ -2,20 +2,29 @@ class BooleanExpr:
     orig_exp = "empty"
     post_exp = ""
     var_set = set()
+    var_stack = []
     op_stack = []
     result_formatted = ""
+    error = False
+    error_msg = ""
 
     prec_dict = {
         '!' : 0, # NOT
         '*' : 1, # AND
         '^' : 2, # XOR
         '+' : 3, # OR
+        '(' : 8,
+        ')' : 9,
+        -1  : 10 # Stack is empty, skip
     }
 
     def __init__(self, exp):
         self.var_set.clear()
-        self.op_stack[:] = []
         self.orig_exp = exp
+        self.op_stack[:] = []
+        self.var_stack[:] = []
+        self.error = False
+        self.error_msg = ""
         self.process_exp(self.orig_exp)
 
     def process_exp(self, exp):
@@ -27,47 +36,81 @@ class BooleanExpr:
         self.post_exp = ""
         # Step through chars of booelean expression
         for char in exp:
+            # print(char)
+            # print(self.op_stack)
+            # print(self.var_stack)
+            if self.error == True:
+                return
             if char == ' ':
                 continue
             # Alphas are variables
             elif char.isalpha():
                 self.var_set.add(char)
+                self.var_stack.append(char)
                 self.post_exp += char
+            # Start parens
             elif char == '(':
                 self.op_stack.append(char)
+            # End parens
             elif char == ')':
-                while self.op_stack[-1] != '(':
+                while self.get_top(self.op_stack) != '(':
                     self.process_an_op()
-                self.op_stack.pop()
+                if self.op_stack:
+                    self.op_stack.pop()
+            # OR operator
             elif char == '+':
-                while self.op_stack and (self.op_stack[-1] == '+'   \
-                        or self.op_stack[-1] == '!'                 \
-                        or self.op_stack[-1] == '*'                 \
-                        or self.op_stack[-1] == '^'):
-                    self.process_an_op()
-                self.op_stack.append(char)
+                self.process_char(char)
+            # XOR operator
             elif char == '^':
-                while self.op_stack and (self.op_stack[-1] == '!'   \
-                        or self.op_stack[-1] == '*'                 \
-                        or self.op_stack[-1] == '^'):
-                    self.process_an_op()
-                self.op_stack.append(char)
+                self.process_char(char)
+            # AND operator
             elif char == '*':
-                while self.op_stack and (self.op_stack[-1] == '!'   \
-                        or self.op_stack[-1] == '*'):
-                    self.process_an_op()
-                self.op_stack.append(char)
+                self.process_char(char)
+            # NOT operator
             elif char == '!':
-                while self.op_stack and self.op_stack[-1] == '!':
-                    self.process_an_op()
-                self.op_stack.append(char)
-        while self.op_stack:
+                self.process_char(char)
+            else:
+                self.error = True
+                self.error_msg = "{} is not a valid symbol!".format(char)
+        if self.error == True:
+            return
+        while self.op_stack and len(self.var_stack) > 1:
             self.process_an_op()
 
+    def process_char(self, char):
+        prec = self.prec_dict[char]
+        while prec >= self.prec_dict[self.get_top(self.op_stack)]:
+            self.process_an_op()
+        self.op_stack.append(char)
+
+    def get_top(self, arr):
+        if not arr:
+            # self.error = True
+            return -1
+        return arr[-1]
+
     def process_an_op(self):
-        # print("Processing: {}".format(self.op_stack[-1]))
-        self.post_exp += self.op_stack[-1]
+        if not self.op_stack:
+            self.error = True
+            self.error_msg = "Op stack is empty while trying to process op"
+            return
+        temp = self.get_top(self.op_stack)
         self.op_stack.pop()
+        # print("Processing: {}".format(temp))
+        self.post_exp += temp
+        if temp == '!':
+            pass
+        else:
+            if len(self.var_stack) < 2:
+                self.error = True
+                return
+            self.var_stack.pop()
+            self.var_stack.pop()
+            self.var_stack.append("something")
+
+######################################################################
+######################################################################
+######################################################################
 
     def process_all_exps(self):
         self.result_formatted = ""
@@ -105,17 +148,17 @@ class BooleanExpr:
                     one = not post_stack.pop()
                     post_stack.append(one)
                 if char == '*':
-                    one = post_stack.pop() 
+                    one = post_stack.pop()
                     two = post_stack.pop()
                     result = one and two
                     post_stack.append(result)
                 if char == '+':
-                    one = post_stack.pop() 
+                    one = post_stack.pop()
                     two = post_stack.pop()
                     result = one or two
                     post_stack.append(result)
                 if char == '^':
-                    one = post_stack.pop() 
+                    one = post_stack.pop()
                     two = post_stack.pop()
                     result = one and not two or two and not one
                     post_stack.append(result)
@@ -127,7 +170,7 @@ class BooleanExpr:
         self.result_formatted += "-" * len(self.orig_exp) + "----\n"
         for var in vars:
             self.result_formatted += "| {} ".format(var)
-        self.result_formatted += "| {} |\n".format(self.orig_exp) 
+        self.result_formatted += "| {} |\n".format(self.orig_exp)
         self.result_formatted += "----" * len(vars)
         self.result_formatted += "-" * len(self.orig_exp) + "----\n"
 
@@ -141,6 +184,9 @@ class BooleanExpr:
         self.result_formatted += "| {}\n".format(result)
 
     def get_truth_table(self):
+        if self.error == True:
+            return "The expression: {}, is invalid!\n{}".format(self.orig_exp,
+                                                                self.error_msg)
         if len(set(self.var_set)) > 5:
             return "Too many variables! Will result in spam..."
         # print("Variable set: {}".format(self.var_set))
@@ -149,11 +195,6 @@ class BooleanExpr:
         # print("Post-fix: {}".format(self.post_exp))
         self.process_all_exps()
         return self.result_formatted
-
-def get_top(arr):
-    if not arr:
-        return -1
-    return arr.pop()
 
 if __name__ == '__main__':
     exp = "A+C"
