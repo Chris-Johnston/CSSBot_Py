@@ -19,4 +19,7 @@ def setup(bot):
     bot.add_cog(NumberUtilsCog(bot))
 
 def get_bool_table(exp):
-    return "Test"
+    """Parses a boolean expression and creates a truth table"""
+    boolean_exp = BooleanExpr(exp)
+    return boolean_exp.get_truth_table()
+
