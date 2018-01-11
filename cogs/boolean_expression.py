@@ -110,6 +110,7 @@ class BooleanExpr:
         else:
             if len(self.var_stack) < 2:
                 self.error = True
+                self.error_msg = "Too many operators!"
                 return
             self.var_stack.pop()
             self.var_stack.pop()
@@ -185,17 +186,17 @@ class BooleanExpr:
 
     def format_result(self, result, dict_bool, vars):
         for var in vars:
-            if dict_bool[var] == True:
-                booly = 1
-            else:
-                booly = 0
+            booly = self.bool_to_int(dict_bool[var])
             self.result_formatted += "| {} ".format(booly)
-        if result == True:
-            res = 1
-        else:
-            res = 0
+        res = self.bool_to_int(result)
         self.result_formatted += "| {}".format(res)
         self.result_formatted += " " * len(self.orig_exp) + "|\n"
+
+    def bool_to_int(self, booly):
+        if booly == True:
+            return 1
+        else:
+            return 0
 
     def valid_vars(self):
         for i in range(1, len(self.orig_exp)):
@@ -214,8 +215,8 @@ class BooleanExpr:
             return "Too many variables! Will result in spam..."
         # print("Variable set: {}".format(self.var_set))
         # # print(self.op_stack)
-        # print("In-fix:   {}".format(self.orig_exp))
-        # print("Post-fix: {}".format(self.post_exp))
+        print("\nIn-fix:   {}".format(self.orig_exp))
+        print("Post-fix: {}".format(self.post_exp))
         self.process_all_exps()
         return self.result_formatted
 
@@ -253,5 +254,9 @@ if __name__ == '__main__':
     print(exp_obj.get_truth_table())
 
     exp = "ABCD"
+    exp_obj = BooleanExpr(exp)
+    print(exp_obj.get_truth_table())
+
+    exp = "!(x + y)"
     exp_obj = BooleanExpr(exp)
     print(exp_obj.get_truth_table())
