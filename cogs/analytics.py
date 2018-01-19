@@ -75,22 +75,22 @@ class Analytics:
         :return:
         """
 
-        to_insert = (after.id, str(after.status), str(after.game or "None"), datetime.datetime.now())
+        if self.database_connection is not None:
+            to_insert = (after.id, str(after.status), str(after.game or "None"), datetime.datetime.now())
 
-        # log the after status
-        c = self.database_connection.cursor()
+            # log the after status
+            c = self.database_connection.cursor()
 
-        c.execute("""INSERT INTO userStatus VALUES (?, ?, ?, ?)""", to_insert)
+            c.execute("""INSERT INTO userStatus VALUES (?, ?, ?, ?)""", to_insert)
 
-        self.database_connection.commit()
+            self.database_connection.commit()
 
     async def on_message(self, message):
         """Inserts a new row into the messages table when a message is sent.
 
         """
-
         # ensure that this is a guild message
-        if message.guild is not None:
+        if self.database_connection is not None and message.guild is not None:
             # build the tuple that represents the data to insert
             # unforunately the library doesn't support inserting a dict
 
