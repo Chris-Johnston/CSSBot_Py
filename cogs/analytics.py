@@ -1,0 +1,112 @@
+import discord
+from discord.ext import commands
+
+# sqlite
+import sqlite3
+import configparser
+import datetime
+
+# stuff that handles user analytics
+# no commands are associated with this
+class Analytics:
+    """Set of handlers that log use analytics.
+
+    """
+
+    def __init__(self, bot):
+        # open the config file in the parent directory
+        config = configparser.ConfigParser()
+        with open('config.ini') as config_file:
+            config.read_file(config_file)
+
+        self.bot = bot
+
+        self.database_connection = None
+
+        # if the database is specified
+        if config.has_option(section='Configuration',
+                             option='analytics_database'):
+            path = config.get(section='Configuration',
+                              option='analytics_database')
+            # open the database
+            self.database_connection = sqlite3.connect(path)
+
+            # setup the tables of the database
+            self._setup_tables()
+
+        # no database specified will mean that the database
+        # will be None
+
+    def _setup_tables(self):
+        """Sets up the tables of the database
+
+        :return:
+        """
+        # connection 'cursor'
+        c = self.database_connection.cursor()
+
+        # user message table
+
+        # Discord uses 64-bit unsigned IDs, so represent those
+        # as UNSIGNED BIG INTs
+        c.execute("""CREATE TABLE IF NOT EXISTS messages
+                    (guildId UNSIGNED BIG INT,
+                     channelId UNSIGNED BIG INT,
+                     authorId UNSIGNED BIG INT,
+                     messageId UNSIGNED BIG INT,
+                     timestamp DATETIME,
+                     contents TEXT)""")
+
+        # member status table
+
+        c.execute("""CREATE TABLE IF NOT EXISTS userStatus
+                    (userId UNSIGNED BIG INT,
+                    status TEXT,
+                    game_name TEXT,
+                    timestamp DATETIME)""")
+
+        # commit changes when done
+        self.database_connection.commit()
+
+    async def on_member_update(self, before, after):
+        """Inserts into the user status table when the user status has changed
+        :param before: the Member value before the updated their status
+        :param after: the value after their status has changed
+        :return:
+        """
+
+        to_insert = (after.id, str(after.status), str(after.game or "None"), datetime.datetime.now())
+
+        # log the after status
+        c = self.database_connection.cursor()
+
+        c.execute("""INSERT INTO userStatus VALUES (?, ?, ?, ?)""", to_insert)
+
+        self.database_connection.commit()
+
+    async def on_message(self, message):
+        """Inserts a new row into the messages table when a message is sent.
+
+        """
+
+        # ensure that this is a guild message
+        if message.guild is not None:
+            # build the tuple that represents the data to insert
+            # unforunately the library doesn't support inserting a dict
+
+            to_insert = ( message.guild.id, message.id, message.author.id,
+                          message.id, message.created_at, message.content)
+
+            # get a connection cursor
+            c = self.database_connection.cursor()
+
+            # insert into the table
+            # kinda just have to assume that the values are in the same order as
+            # they were created in the database
+            c.execute("""INSERT INTO messages VALUES (?,?,?,?,?,?)""",
+                      to_insert)
+
+            self.database_connection.commit()
+
+def setup(bot):
+    bot.add_cog(Analytics(bot))
