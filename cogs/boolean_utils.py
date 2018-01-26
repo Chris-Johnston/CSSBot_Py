@@ -176,10 +176,7 @@ class BooleanExpr:
         self.op_stack.pop()
         self.post_exp += temp
         # If the operator is unary, then there will be no change in var_stack
-        if temp == '!' or temp == '~':
-            pass
-        # Else, pop two var, add one var to stack
-        else:
+        if temp != '!' and temp != '~':
             if len(self.var_stack) < 2:
                 self.error = True
                 self.error_msg = "Too many operators!"
@@ -265,7 +262,7 @@ class BooleanExpr:
                 if char == '^':
                     one = post_stack.pop()
                     two = post_stack.pop()
-                    result = one and not two or two and not one
+                    result = bool(one) ^ bool(two)
                     post_stack.append(result)
         # Save result in a formatted fashion, will be single line in table
         self.format_result(post_stack.pop(), dict_bool, vars)
@@ -283,18 +280,11 @@ class BooleanExpr:
     def format_result(self, result, dict_bool, vars):
         '''Creates single line in the truth table'''
         for var in vars:
-            booly = self.bool_to_int(dict_bool[var])
+            booly = int(dict_bool[var])
             self.result_formatted += "| {} ".format(booly)
-        res = self.bool_to_int(result)
+        res = int(result)
         self.result_formatted += "| {}".format(res)
         self.result_formatted += " " * len(self.disp_exp) + "|\n"
-
-    def bool_to_int(self, booly):
-        '''Returns 1 if True, 0 if False'''
-        if booly == True:
-            return 1
-        else:
-            return 0
 
     def valid_vars(self):
         '''False if there are two vars right next to each other'''
