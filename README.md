@@ -9,7 +9,7 @@ See also [CSSBot](https://github.com/Chris-Johnston/CSSBot), same idea just in C
 This project is meant for Python 3.6. Please ensure that you have that installed and working, then come back here.
 
 ## Prerequisites
-You'll probably need to install a few packages first.
+You'll probably need to install a few packages and Python 3.6 first.
 
 Linux:
 ```bash
