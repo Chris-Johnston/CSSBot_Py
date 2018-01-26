@@ -9,7 +9,7 @@ class BoolUtilsCog:
         self.bot = bot
 
     @commands.command()
-    async def bool(self, ctx, exp):
+    async def bool(self, ctx, *, exp):
         """Creates truth table from expression using !,*,^,+
 
         Wrap expression in "quotes" to include spaces in your expression.
@@ -56,9 +56,13 @@ class BooleanExpr:
     error = False
     error_msg = ""
 
+    # Lists all the valid boolean operators
+    boolean_ops = ['+', '^', '*', '!', '~']
+
     # Defines operator precedence
     prec_dict = {
         '!' : 0, # NOT
+        '~' : 0, # NOT alias
         '*' : 1, # AND
         '^' : 2, # XOR
         '+' : 3, # OR
@@ -72,6 +76,11 @@ class BooleanExpr:
         self.var_set.clear()
         self.disp_exp = exp
         self.orig_exp = "".join(exp.split())
+        # Get rid of double negatation
+        self.orig_exp = self.orig_exp.replace('!!', '')
+        self.orig_exp = self.orig_exp.replace('~~', '')
+        self.orig_exp = self.orig_exp.replace('~!', '')
+        self.orig_exp = self.orig_exp.replace('!~', '')
         self.op_stack[:] = []
         self.var_stack[:] = []
         self.error = False
@@ -135,8 +144,7 @@ class BooleanExpr:
 
     def is_valid_op(self, char):
         '''True if char is a valid boolean operator'''
-        result = char == '+' or char == '^' or char == '*' or char == '!'
-        return result
+        return char in self.boolean_ops
 
     def process_char(self, char):
         '''Processes a single operator'''
@@ -168,7 +176,7 @@ class BooleanExpr:
         self.op_stack.pop()
         self.post_exp += temp
         # If the operator is unary, then there will be no change in var_stack
-        if temp == '!':
+        if temp == '!' or temp == '~':
             pass
         # Else, pop two var, add one var to stack
         else:
@@ -241,7 +249,7 @@ class BooleanExpr:
                 post_stack.append(dict_bool[char])
             elif char in self.prec_dict:
                 # Compute result and add it back to stack
-                if char == '!':
+                if char == '!' or char == '~':
                     one = not post_stack.pop()
                     post_stack.append(one)
                 if char == '*':
@@ -297,15 +305,13 @@ class BooleanExpr:
 
     def valid_negation(self):
         '''False if operator! is placed incorrectly'''
+        not_list = ['!', '~']
         for i in range(1, len(self.orig_exp)):
-            if self.orig_exp[i] == '!' and self.orig_exp[i - 1].isalpha():
+            if self.orig_exp[i] in not_list and self.orig_exp[i - 1].isalpha():
                 self.error_msg = "! should come before a variable, not after."
                 return False
-            if self.orig_exp[i] == '!' and self.orig_exp[i - 1] == ')':
+            if self.orig_exp[i] in not_list and self.orig_exp[i - 1] == ')':
                 self.error_msg = "'!' should not follow a ')'"
-                return False
-            if self.orig_exp[i] == '!' and self.orig_exp[i - 1] == '!':
-                self.error_msg = "Please remove redundant ! operators..."
                 return False
         return True
 
