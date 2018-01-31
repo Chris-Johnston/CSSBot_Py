@@ -65,8 +65,54 @@ class Analytics:
                     game_name TEXT,
                     timestamp DATETIME)""")
 
+        # reaction table
+        c.execute("""CREATE TABLE IF NOT EXISTS reactions
+                    (userId UNSIGNED BIG INT,
+                    emojiname TEXT,
+                    messageId UNSIGNED BIG INT,
+                    channelId UNSIGNED BIG INT,
+                    action TEXT,
+                    timestamp DATETIME)""")
+        # emojiname is emoji.name
+        # action will be "ADD" for addition
+        # and "REMOVE" for removed
+
         # commit changes when done
         self.database_connection.commit()
+
+    async def on_raw_reaction_add(self, emoji, message_id, channel_id, user_id):
+        """
+        Inserts an ADD into the table when reactions are added
+        :param emoji:
+        :param message_id:
+        :param channel_id:
+        :param user_id:
+        :return:
+        """
+        if self.database_connection is not None:
+            to_insert = (user_id, str(emoji.name), message_id, channel_id, "ADD", datetime.datetime.now())
+
+            # insert it
+            c = self.database_connection.cursor()
+            c.execute("""INSERT INTO reactions VALUES (?, ?, ?, ?, ?, ?)""", to_insert)
+            self.database_connection.commit()
+
+    async def on_raw_reaction_remove(self, emoji, message_id, channel_id, user_id):
+        """
+        Inserts a REMOVE into the table when reactions are removed
+        :param emoji:
+        :param message_id:
+        :param channel_id:
+        :param user_id:
+        :return:
+        """
+        if self.database_connection is not None:
+            to_insert = (user_id, str(emoji.name), message_id, channel_id, "REMOVE", datetime.datetime.now())
+
+            # insert it
+            c = self.database_connection.cursor()
+            c.execute("""INSERT INTO reactions VALUES (?, ?, ?, ?, ?, ?)""", to_insert)
+            self.database_connection.commit()
 
     async def on_member_update(self, before, after):
         """Inserts into the user status table when the user status has changed
