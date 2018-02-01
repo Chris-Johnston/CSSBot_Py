@@ -34,6 +34,7 @@ default_extensions = ['cogs.basic',
                       'cogs.courseInfo',
                       'cogs.number_utils',
                       'cogs.boolean_utils',
+                      'cogs.paging_utils',
                       'cogs.analytics']
 
 
