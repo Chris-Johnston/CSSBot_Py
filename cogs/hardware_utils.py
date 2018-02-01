@@ -2,8 +2,8 @@
 discord bot cog that is used for automating tedious work in CSS422
 '''
 from discord.ext import commands
-from lib.src.boolean_expr_parser import BooleanExpr
-from lib.src.page_address_calc import AddressParser
+from submodules.hardware_scripts.src.boolean_expr_parser import BooleanExpr
+from submodules.hardware_scripts.src.page_address_calc import AddressParser
 
 class HardwareUtilsCog:
     '''
