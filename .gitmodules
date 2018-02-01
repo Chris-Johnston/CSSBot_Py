@@ -1,0 +1,3 @@
+[submodule "hardware_scripts"]
+	path = hardware_scripts
+	url = https://github.com/SpaceKatt/hardware_scripts.git
