@@ -8,6 +8,7 @@ class BoolUtilsCog:
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.cooldown(3, 30, commands.BucketType.user)
     @commands.command()
     async def bool(self, ctx, *, exp):
         """Creates truth table from expression using !,*,^,+

@@ -8,6 +8,7 @@ class NumberUtilsCog:
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.command()
     async def convert(self, ctx, num):
         """Convert command
@@ -27,11 +28,13 @@ class NumberUtilsCog:
 
         await ctx.send(get_conversions(num))
 
+    @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.command()
     async def from_hex(self, ctx, num: str):
         """Converts the supplied hexadecimal number"""
         await ctx.send(get_conversions(int(num, 16)))
 
+    @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.command()
     async def from_bin(self, ctx, num: str):
         """Converts the supplied binary number"""

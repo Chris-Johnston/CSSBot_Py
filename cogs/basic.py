@@ -10,16 +10,19 @@ class BasicCog:
         self.bot = bot
 
     # ping command
+    @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command()
     async def ping(self, ctx):
         await ctx.send('Pong!')
 
     # echo command
+    @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.command(name='echo')
     async def echo(self, ctx, *, message='_echo_'):
         await ctx.send(f'{ctx.author.mention} : {message}')
 
     # github command
+    @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command(name='github')
     async def github(self, ctx):
         await ctx.send(f'https://github.com/Chris-Johnston/CSSBot_Py')

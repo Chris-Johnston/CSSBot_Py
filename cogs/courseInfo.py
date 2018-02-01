@@ -55,6 +55,7 @@ class CourseInfo:
     # course codes must be in the format
     # CSS XXX
     # validation of this should come down the line
+    @commands.cooldown(2, 30, commands.BucketType.user)
     @commands.command()
     async def course(self, ctx, *, course_code='No course'):
 
