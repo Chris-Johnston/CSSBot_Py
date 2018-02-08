@@ -55,7 +55,7 @@ class CourseInfo:
     # course codes must be in the format
     # CSS XXX
     # validation of this should come down the line
-    @commands.cooldown(2, 30, commands.BucketType.user)
+    @commands.cooldown(2, 10, commands.BucketType.user)
     @commands.command()
     async def course(self, ctx, *, course_code='No course'):
 
@@ -113,7 +113,10 @@ class CourseInfo:
 # 12:45 -> '12:45 PM'
 # 13:45 -> '1:45 PM'
 def _int_time_to_str(integer_time):
-    return pandas.to_datetime(integer_time, format='%H%M').strftime('%I:%M %p')
+    try:
+        return pandas.to_datetime(integer_time, format='%H%M').strftime('%I:%M %p')
+    except ValueError:
+        return 'Invalid Time'
 
 # '1' -> 'M'
 # '2' -> 'T'
