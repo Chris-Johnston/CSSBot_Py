@@ -4,6 +4,8 @@ python:
 install:
   - python3.6 -m pip install -U pylint
   - python3.6 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+  - python3.6 -m pip install bs4
+  - python3.6 -m pip install pandas
 script:
   - python3.6 test.py
   - (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0
