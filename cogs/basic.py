@@ -36,7 +36,7 @@ def _test_example():
     Example of how to incorporate doctests
     
     >>> _test_example()
-    'Pong!'
+    'Pong!BROKEN'
 
     :return: 'Pong!'
     """
