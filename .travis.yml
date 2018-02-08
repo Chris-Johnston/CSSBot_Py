@@ -3,5 +3,7 @@ python:
   - "3.6"
 install:
   - python3.6 -m pip install -U pylint
+  - python3.6 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
 script:
-  (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0 
+  - python3.6 test.py
+  - (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0
