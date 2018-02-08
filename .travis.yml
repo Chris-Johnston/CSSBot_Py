@@ -8,4 +8,9 @@ install:
   - python3.6 -m pip install pandas
 script:
   - python3.6 test.py
-  - (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0
+  - if [ $? -eq 0 ]
+  then
+    (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0
+  else
+    (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 1
+  fi
