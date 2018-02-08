@@ -1,3 +1,4 @@
+import sys
 import unittest
 import doctest
 
@@ -29,4 +30,8 @@ if __name__ == '__main__':
     tests = unittest.TestSuite()
     test = load_tests(tests)
     runner = unittest.TextTestRunner()
-    runner.run(tests)
+    # get the exit code and return when failed
+    ret = not runner.run(tests).wasSuccessful()
+    sys.exit(ret)
+
+
