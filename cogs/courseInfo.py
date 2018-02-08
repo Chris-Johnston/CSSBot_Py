@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import configparser
 import json
+import re
 from pprint import pprint
 from bs4 import BeautifulSoup # html parser
 import pandas
@@ -118,9 +119,79 @@ def _int_time_to_str(integer_time):
     except ValueError:
         return 'Invalid Time'
 
-# '1' -> 'M'
-# '2' -> 'T'
+def _normalise_course_code(code_str):
+    """
+    Normalizes the supplied course code into the format that is needed
+    CSS [0-9][0-9][0-9] -> CSS [0-9][0-9][0-9]
+    [0-9][0-9][0-9] -> CSS [0-9][0-9][0-9]
+
+    Doctest
+
+    >>> _normalise_course_code('CSS 123')
+    'CSS 123'
+    >>> _normalise_course_code('css 123')
+    'CSS 123'
+    >>> _normalise_course_code('123')
+    'CSS 123'
+    >>> _normalise_course_code('1234')
+    'Invalid'
+    >>> _normalise_course_code('nothing')
+    'Invalid'
+
+    :param code_str: course code string
+    :return:
+    """
+    try:
+        code_str = code_str.upper().strip()
+
+        # regex match for the good format
+        m = re.search('^CSS [0-9][0-9][0-9]$', code_str)
+        if m is None:
+            # didn't match
+            # so check to see if it matches XXX
+            m = re.search('^[0-9][0-9][0-9]$', code_str)
+
+            if m is None:
+                # still didn't match
+                return 'Invalid'
+            else:
+                # if it matched this, then return CSS XXX
+                return f'CSS {m.group(0)}'
+        # if we are here, it matched, so go with it
+        return code_str
+    except:
+        return 'Invalid Error'
+
+
 def _meeting_day_to_day(day):
+    """
+    Converts a string containing an integer number representing a day of the week
+    into a string that contains the value for that day of the week
+
+    Only does business weekdays
+
+    DocTest
+
+    >>> _meeting_day_to_day('-1')
+    ''
+    >>> _meeting_day_to_day('1')
+    'M'
+    >>> _meeting_day_to_day('2')
+    'T'
+    >>> _meeting_day_to_day('3')
+    'W'
+    >>> _meeting_day_to_day('4')
+    'Th'
+    >>> _meeting_day_to_day('5')
+    'F'
+    >>> _meeting_day_to_day('6')
+    'Sat'
+    >>> _meeting_day_to_day('7')
+    ''
+
+    :param day:
+    :return:
+    """
     if day == '1':
         return 'M'
     elif day == '2':
@@ -137,3 +208,7 @@ def _meeting_day_to_day(day):
 
 def setup(bot):
     bot.add_cog(CourseInfo(bot))
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
