@@ -1,0 +1,5 @@
+discord.py==1.0.0a1426+g8de382f
+pandas==0.22.0
+beautifulsoup4==4.6.0
+discord==0.0.2
+pylint==1.7.3
