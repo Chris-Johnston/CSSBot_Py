@@ -34,6 +34,7 @@ class Analytics:
             # setup the tables of the database
             self._setup_tables()
 
+
         # no database specified will mean that the database
         # will be None
 
@@ -77,8 +78,55 @@ class Analytics:
         # action will be "ADD" for addition
         # and "REMOVE" for removed
 
+        # metadata table
+        # saves the user name
+        # user nickname
+        # guild Id (nicknames are on a server by server basis)
+        # https://discordapp.com/developers/docs/resources/user#user-object
+        c.execute("""CREATE TABLE IF NOT EXISTS userData
+                    (userId UNSIGNED BIG INT,
+                    username TEXT,
+                    discriminator TEXT,
+                    guildId UNSIGNED BIG INT,
+                    nickname TEXT,
+                    avatar TEXT,
+                    bot BOOLEAN DEFAULT 0,
+                    joinedAt DATETIME)
+                    """)
+
         # commit changes when done
         self.database_connection.commit()
+
+    def _log_guild_user(self, user):
+        """
+        Logs the metadata of a guild user into the table
+        userData
+        :param user:
+        :return:
+        """
+        to_insert = (
+            user.id, user.name, user.discriminator, user.guild.id,
+            user.nick, user.avatar, user.bot, user.joinedAt)
+
+        if self.database_connection is not None:
+            c = self.database_connection.cursor()
+            c.execute("""
+            INSERT INTO userData VALUES (?, ?, ?, ?, ?, ?, ?, ?);""",
+                      to_insert)
+
+    async def on_ready(self):
+        """
+        Populates the userData table with information for each user
+        :return:
+        """
+        if self.database_connection is not None:
+            # loop through all of the guilds
+            for guild in self.bot.guilds:
+                # loop through all the users
+                for user in guild.members:
+                    _log_guild_user(user)
+            # commit the changes when done
+            self.database_connection.commit()
 
     async def on_raw_reaction_add(self, emoji, message_id, channel_id, user_id):
         """
