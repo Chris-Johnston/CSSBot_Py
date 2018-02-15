@@ -10,5 +10,15 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+        delay: 20s
 volumes:
   db:
+    # the db volume is external and should be mounted to a directory
+    # that docker can get to. this makes it easier to get to the data dir
+    external: true
+
+    # use local data that persists mounted to the data directory
+    # install from
+    # https://github.com/CWSpear/local-persist
+    # not going to have this configured here, the configuration of the 
+    # volume should be done on the machine itself
