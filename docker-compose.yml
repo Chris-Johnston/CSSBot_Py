@@ -1,0 +1,8 @@
+version: "3"
+services:
+  bot:
+    image: chrisjohnston/cssbotpy:latest
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
