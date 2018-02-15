@@ -2,7 +2,13 @@ version: "3"
 services:
   bot:
     image: chrisjohnston/cssbotpy:latest
+    # build: .
+    # dockerfile: Dockerfile
+    volumes:
+      - db:/data
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+volumes:
+  db:
