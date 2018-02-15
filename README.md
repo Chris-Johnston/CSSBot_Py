@@ -13,7 +13,7 @@ You'll probably need to install a few packages and Python 3.6 first.
 
 Linux:
 ```bash
-python3.6 -m pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+python3.6 -m pip install -r requirements.txt
 sudo apt-get install libffi-dev python3.6-dev
 ```
 
