@@ -7,8 +7,7 @@ import re
 from pprint import pprint
 from bs4 import BeautifulSoup # html parser
 import pandas
-
-import main
+import configuration
 
 # course info module
 
@@ -24,9 +23,10 @@ import main
 class CourseInfo:
 
     def __init__(self, bot):
+        print(configuration.data_path)
         # open the config file in the parent directory
         config = configparser.ConfigParser()
-        with open(f'${main.data_path}/config.ini') as config_file:
+        with open(f'{configuration.data_path}/config.ini') as config_file:
             config.read_file(config_file)
 
         # sets the reference to the bot

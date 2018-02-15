@@ -5,7 +5,7 @@ from discord.ext import commands
 import sqlite3
 import configparser
 import datetime
-import main
+import configuration
 
 # stuff that handles user analytics
 # no commands are associated with this
@@ -15,9 +15,10 @@ class Analytics:
     """
 
     def __init__(self, bot):
+
         # open the config file in the parent directory
         config = configparser.ConfigParser()
-        with open(f'${main.data_path}/config.ini') as config_file:
+        with open(f'{configuration.data_path}/config.ini') as config_file:
             config.read_file(config_file)
 
         self.bot = bot
