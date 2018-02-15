@@ -13,7 +13,7 @@ class BasicCog:
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command()
     async def ping(self, ctx):
-        await ctx.send('Pong!')
+        await ctx.send(_test_example())
 
     # echo command
     @commands.cooldown(1, 60, commands.BucketType.user)
@@ -30,3 +30,20 @@ class BasicCog:
 # add this cog to the bot
 def setup(bot):
     bot.add_cog(BasicCog(bot))
+
+def _test_example():
+    """
+    Example of how to incorporate doctests
+    
+    >>> _test_example()
+    'Pong!'
+
+    :return: 'Pong!'
+    """
+
+    return 'Pong!'
+
+# optional, but helpful for testing via the shell
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

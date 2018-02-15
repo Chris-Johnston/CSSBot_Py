@@ -2,6 +2,6 @@ language: python
 python:
   - "3.6"
 install:
-  - python3.6 -m pip install -U pylint
+  - python3.6 -m pip install -r requirements.txt
 script:
-  (find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0 
+  - if python3.6 test.py; then ((find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0 ); else ((find . -iname "*.py" | xargs python3.6 -m pylint) || exit 1); fi;

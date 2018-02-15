@@ -45,9 +45,19 @@ def setup(bot):
     bot.add_cog(NumberUtilsCog(bot))
 
 def get_conversions(number: int):
-    """Gets a string for output that has all of the conversions."""
+    r"""Gets a string for output that has all of the conversions.
+
+    convert newlines so that they can be tested properly
+    >>> get_conversions(1).replace('\n', ' ')
+    '``` Dec:    1 Hex:    0x1 Bin:    0b1 Oct:    0o1```'
+
+    """
     ret = f"```\nDec:    {number}\n" +\
           f"Hex:    {hex(number)}\n" +\
           f"Bin:    {bin(number)}\n" +\
           f"Oct:    {oct(number)}```"
     return ret
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
