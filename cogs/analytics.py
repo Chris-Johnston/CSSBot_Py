@@ -106,7 +106,7 @@ class Analytics:
         """
         to_insert = (
             user.id, user.name, user.discriminator, user.guild.id,
-            user.nick, user.avatar, user.bot, user.joinedAt)
+            user.nick, user.avatar, user.bot, user.joined_at)
 
         if self.database_connection is not None:
             c = self.database_connection.cursor()
