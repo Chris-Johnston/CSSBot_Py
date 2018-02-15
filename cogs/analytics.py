@@ -124,7 +124,7 @@ class Analytics:
             for guild in self.bot.guilds:
                 # loop through all the users
                 for user in guild.members:
-                    _log_guild_user(user)
+                    self._log_guild_user(user)
             # commit the changes when done
             self.database_connection.commit()
 
