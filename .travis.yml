@@ -1,7 +1,26 @@
+sudo: required
+services:
+- docker
 language: python
 python:
-  - "3.6"
+- '3.6'
 install:
-  - python3.6 -m pip install -r requirements.txt
+- python3.6 -m pip install -r requirements.txt
 script:
-  - if python3.6 test.py; then ((find . -iname "*.py" | xargs python3.6 -m pylint) || exit 0 ); else ((find . -iname "*.py" | xargs python3.6 -m pylint) || exit 1); fi;
+- if python3.6 test.py; then ((find . -iname "*.py" | xargs python3.6 -m pylint) ||
+  exit 0 ); else ((find . -iname "*.py" | xargs python3.6 -m pylint) || exit 1); fi;
+after_success:
+  # https://sebest.github.io/post/using-travis-ci-to-build-docker-images/
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+  - export REPO=chrisjohnston/cssbotpy
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ] && [ "${TRAVIS_PULL_REQUEST}" == "false" ] ; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
+  - docker build -f Dockerfile -t $REPO:$COMMIT .
+  - docker tag $REPO:$COMMIT $REPO:$TAG
+  - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+  - docker push $REPO
+env:
+  global:
+  - secure: yp/PgpcBJ4wXPhic0T1C+CdUeBdJHKb/DedWZbf+MHvbO+3vhSAhjkcixnISjm0oZsemGW2vJihJBQoG6brfH7tq7GuFIlFqd631A95BK/QIihvU8d8dG0EY4tp4YtdSy50l/yUwhv8zn0Y/OtUZIwSz3BFRl1NkSLtjPagAC6xbWjWKkIhua5NYCdnVDg9aXQSL2r5cBd21AwDaixx1L9zfQqvO2uCWntRDPBerLW/C9NCE2tJhCj7IlLI5aBdv7rsg9G2cxMmDQ4kVKneU7LZj0VXqGH5JOnizbZS72ApI2Zy3Dc3A7RkrPJCiI66zWV/BQEYxZ1DVGE+nbl4w5dsWoJFthavAu20iwRdrBT56t748AT/de2mKZK+EBvlEG2L1Jkg8gI0gxh0yMrltuHW/a0aV14b0VNl+wBx7GHuMsATh9sxO9nc7E9WtF3NujjDz5p6RSwSXrjwsefc8nxwEYNLfN7w8spcLmsfEZO4BcmKh4E+dcSP+qVOeqCDsqayleY3oaaq/69/L/IpMcWrxc60+iQusZEDy52BP6nXf0qNvVOX5oC64Ws8Y6YjzbBOJf536tVRjMS1N7Z3EhibjFkPPI3iQqfx2GVdxT9LQiyjcg+tsIjJx0oyn7r85IlLJPrz6FqGu8+m2T9TXAcZIkVMBFxri6CuMOU4YNZc=
+  - secure: QYqniXZ0OLqqBOXGYsnI1pn7yvPCPsiTCxOELiH/F4TqFgCGkO0piPNebaysWrmf+J0A5DgaV8bgcXVBsmsL5SOPtKBI6xcHIoNawg+0wNDwUnwtv4GFp7xT+PO8lu7KmMLxV0TY13o2g48pHG5lql2+q1TVdK98gfTXOrVNyBS+p4I/jO4jWOr4KAbv/S71gemyfZQhbiZNXoWykC9Gq0whcGzeoF/5r9TWE61ALBrxdXNGEVF4dZ5mStxdSX7QGpyxWA3uAKXkCvJVx5YrugMh2AQRT9c8wOk+GtAv+WEKEGzmUeJ4FX73rHjPQmDSIzcrbyVOTNSgws3A9vAqt/+9OaASSbSo8ttkQYTiX9vh1/KZii/6SKwDdzkuOEkgZ/5ueNC1yKeP7BVB7qVkrvAKcZynjR5dj9zgFxk1H3R1W2xns2+QJ8/XVshFDFs7r5BI813qNhgNtlLVtwYYtxrZmaYaFvDZT7HR14ukW2PHveaaAii3m8ZOvTeu/60nccOVwXTuKt3uyFvGKFajAfRyJVy27ON5pRPIx6riH+pR8lfXXnIhNN4DdPqVrlWjMNijAIIiYzAjcNBrhi/NMASh6XH5JIHlrPApNOdHwSBd7gLOG5+53ZfmwC8Hz/F3t2Swxy3Pzyk0U5Ns3pe3cmkczZkTZJXLAY89Zm0U9jE=
+  - secure: cl79SInVzGIwYzZV5Ux+HuovHHsc5UiHTnLaligvn5EGrMwGcu50pOUCvCaF3nmtSgDefpJpE7Twt9faaZMIcWghf2MWih/QdjeWExRCoMbxtvyhCsLQ9E+5gkgGuhwBa9W1zm3QqwLPoOkW52q5HyreTsBTvC0ArN8GyFlFvQmYl2cJAy1cFLBcZlpZGwsWFWuXjOrX129czh/t4HwL5zyo8QSOH62fufhsKfxAa2NrCxAbb4sKHMy6GHfY7/Zdd1lxd4lJFEd10POhRl3yqIydbDPDJsiMfwiOv5iP6UXYeGY8Zndxjb/Corgfv5WFKqGEA0SbHY11UPo4yy9okTWXXR3SGzKhQyvNRKt1I92IOlEcnqAg9/vxhgG62sk38KT2S2UivSSAjbSUNeXWaMzmLnqrXSOIuAFxC/vusMW8CrgMfd1XQC2m66VpGZilGCOg+gVMIfsE+ChwlJTWXP0z8kauQOIR4lOz9J2vt3YyL0P19jxgxwGjUPXQQKoHrQayp2yFFAw92ZNIXTPL3j9T3gcUiDlICqe7Rn9JIbtIpxSbgsMF8i5wBeKYnPlGUf9ULoJNO87UafuICPvY2HTXd+91Tlwd+SjPG5av0o/NcSaVg84h/JUwbgSBT9zJE03nUJgwECb9h4PrHQ6pLd88mnVXemLiJvHM2WRH9lE=
+  - COMMIT=${TRAVIS_COMMIT::8}
