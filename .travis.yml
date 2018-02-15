@@ -18,7 +18,6 @@ after_success:
   - docker tag $REPO:$COMMIT $REPO:$TAG
   - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
   - echo Version:
-  - echo $DOCKER_EMAIL
   - echo $REPO:$COMMIT $REPO:$TAG
   - echo $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
   - docker push $REPO
