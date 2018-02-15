@@ -23,7 +23,6 @@ import configuration
 class CourseInfo:
 
     def __init__(self, bot):
-        print(configuration.data_path)
         # open the config file in the parent directory
         config = configparser.ConfigParser()
         with open(f'{configuration.data_path}/config.ini') as config_file:
