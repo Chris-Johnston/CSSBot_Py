@@ -11,6 +11,14 @@ services:
       restart_policy:
         condition: on-failure
         delay: 20s
+  # use this for continuous deployment
+  # https://github.com/v2tec/watchtower
+  watchtower:
+    image: v2tec/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json
+    command: --interval 30
 volumes:
   db:
     # the db volume is external and should be mounted to a directory
