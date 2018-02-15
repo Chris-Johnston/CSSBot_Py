@@ -16,11 +16,27 @@ from discord.ext import commands
 import asyncio
 # configuration files
 import configparser
-import sys, traceback
+import sys, traceback, getopt
+
+# parse the args to set the data path
+# this is where the config and other persistent files are stored
+
+# default to the current working dir
+data_path = '.'
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'p:', ['path='])
+except getopt.GetoptError as err:
+    print(err)
+    sys.exit(2)
+
+for opt, arg in opts:
+    if opt in ('-p', '--path'):
+        data_path = arg
 
 # load configuration to get around hard coded tokens
 config = configparser.ConfigParser()
-with open('config.ini') as config_file:
+with open('/data/config.ini') as config_file:
     config.read_file(config_file)
 
 # startup stuff
