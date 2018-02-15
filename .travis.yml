@@ -11,7 +11,7 @@ script:
   exit 0 ); else ((find . -iname "*.py" | xargs python3.6 -m pylint) || exit 1); fi;
 after_success:
   # https://sebest.github.io/post/using-travis-ci-to-build-docker-images/
-  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+  - docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=chrisjohnston/cssbotpy
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ] && [ "${TRAVIS_PULL_REQUEST}" == "false" ] ; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
   - docker build -f Dockerfile -t $REPO:$COMMIT .
