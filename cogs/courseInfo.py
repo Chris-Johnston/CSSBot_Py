@@ -8,6 +8,8 @@ from pprint import pprint
 from bs4 import BeautifulSoup # html parser
 import pandas
 
+import main
+
 # course info module
 
 # this parses though the data that is returned from the endpoint
@@ -24,7 +26,7 @@ class CourseInfo:
     def __init__(self, bot):
         # open the config file in the parent directory
         config = configparser.ConfigParser()
-        with open('config.ini') as config_file:
+        with open(f'${main.data_path}/config.ini') as config_file:
             config.read_file(config_file)
 
         # sets the reference to the bot

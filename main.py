@@ -36,7 +36,7 @@ for opt, arg in opts:
 
 # load configuration to get around hard coded tokens
 config = configparser.ConfigParser()
-with open('/data/config.ini') as config_file:
+with open(f'${data_path}/config.ini') as config_file:
     config.read_file(config_file)
 
 # startup stuff
