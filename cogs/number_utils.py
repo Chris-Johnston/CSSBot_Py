@@ -70,11 +70,11 @@ def _normalize_input(in_str: str):
     if in_str.startswith('0b'):
         num = int(in_str, 2)
     elif in_str.startswith('0x') or in_str.startswith('$'):
-        num = int(in_str, 16)
+        num = int(in_str.replace('$', ''), 16)
     elif in_str.startswith('0o'):
         num = int(in_str, 8)
     else:
-        num = int(in_str)
+        num = int(in_str.replace('#', ''))
     return num
 
 def get_conversions(number: int):
