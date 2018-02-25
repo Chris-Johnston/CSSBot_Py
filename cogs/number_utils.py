@@ -69,7 +69,7 @@ def _normalize_input(in_str: str):
     # convert numbers that are binary
     if in_str.startswith('0b'):
         num = int(in_str, 2)
-    elif in_str.startswith('0x') or in_str.startswith('$')
+    elif in_str.startswith('0x') or in_str.startswith('$'):
         num = int(in_str, 16)
     elif in_str.startswith('0o'):
         num = int(in_str, 8)
