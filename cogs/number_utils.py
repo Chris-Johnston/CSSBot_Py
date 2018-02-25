@@ -64,7 +64,7 @@ def _normalize_input(in_str: str):
     num = -1
 
     # trim the string, remove underscores and to lower
-    in_str = in_str.trim().replace('_', '').lower()
+    in_str = in_str.strip().replace('_', '').lower()
 
     # convert numbers that are binary
     if in_str.startswith('0b'):
