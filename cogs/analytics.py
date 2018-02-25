@@ -114,25 +114,6 @@ class Analytics:
             INSERT INTO userData VALUES (?, ?, ?, ?, ?, ?, ?, ?);""",
                       to_insert)
 
-    async def on_guild_channel_update(self, before, after):
-        """
-        Someone was moving around the position of the guild channels
-        so this is used to investigate
-        :param before:
-        :param after:
-        :return:
-        """
-        if (before.position != after.position):
-            print(f'{datetime.datetime.now()} Position of guild channel {after.name} changed')
-            if after.guild.id == 297485054836342786:
-                channel = self.bot.get_channel(381248102042042373)
-                if channel is not None and isinstance(channel, discord.channel.TextChannel):
-                    await channel.send('Someone changed the position of the channels')
-            if after.guild.id == 333121203457753099:
-                channel = self.bot.get_channel(415792571705589761)
-                if channel is not None and isinstance(channel, discord.channel.TextChannel):
-                    await channel.send('Someone changed the position of the channels')
-
     async def on_ready(self):
         """
         Populates the userData table with information for each user
