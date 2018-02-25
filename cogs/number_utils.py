@@ -44,6 +44,48 @@ def setup(bot):
     """Sets up the cog"""
     bot.add_cog(NumberUtilsCog(bot))
 
+
+def _normalize_input(in_str: str):
+    """
+
+    >>> _normalize_input('')
+    -1
+    >>> _normalize_input('____')
+    -1
+    >>> _normalize_input('0b1_0_1')
+    5
+    >>> _normalize_input('0xA')
+    A
+    >>> _normalize_input('0XF_F')
+    255
+    >>> _normalize_input('0o7')
+    7
+    >>> _normalize_input('123123')
+    123123
+    >>> _normalize_input('123_123')
+    123123
+    >>> _normalize_input('-123_123')
+    -123123
+
+    Accepts the user input and converts it to several forms
+    """
+
+    num = -1
+
+    # trim the string, remove underscores and to lower
+    in_str = in_str.trim().replace('_', '').lower()
+
+    # convert numbers that are binary
+    if in_str.startswith('0b'):
+        num = int(in_str, 2)
+    elif in_str.startswith('0x') or in_str.startswith('$')
+        num = int(in_str, 16)
+    elif in_str.startswith('0o'):
+        num = int(in_str, 8)
+    else:
+        num = int(in_str)
+    return num
+
 def get_conversions(number: int):
     r"""Gets a string for output that has all of the conversions.
 
