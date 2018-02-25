@@ -16,17 +16,8 @@ class NumberUtilsCog:
         This assumes decimal for no prefix given,
         if there is a prefix given it will use the
         supplied prefix."""
-        if isinstance(num, str):
-            if str(num).lower().startswith('0b'):
-                num = int(num, 2)
-            elif str(num).lower().startswith('0x'):
-                num = int(num, 16)
-            elif str(num).lower().startswith('0o'):
-                num = int(num, 8)
-            else:
-                num = int(num)
 
-        await ctx.send(get_conversions(num))
+        await ctx.send(get_conversions(_normalize_input(num)))
 
     @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.command()
