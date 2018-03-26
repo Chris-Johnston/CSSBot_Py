@@ -111,7 +111,7 @@ class Analytics:
         if self.database_connection is not None:
             c = self.database_connection.cursor()
             c.execute("""
-            INSERT INTO userData VALUES (?, ?, ?, ?, ?, ?, ?, ?);""",
+            INSERT OR REPLACE INTO userData VALUES (?, ?, ?, ?, ?, ?, ?, ?);""",
                       to_insert)
 
     async def on_ready(self):
@@ -188,7 +188,7 @@ class Analytics:
             # build the tuple that represents the data to insert
             # unforunately the library doesn't support inserting a dict
 
-            to_insert = ( message.guild.id, message.id, message.author.id,
+            to_insert = ( message.guild.id, message.channel.id, message.author.id,
                           message.id, message.created_at, message.content)
 
             # get a connection cursor
