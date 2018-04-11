@@ -46,7 +46,7 @@ def _normalize_input(in_str: str):
     >>> _normalize_input('0b1_0_1')
     5
     >>> _normalize_input('0xA')
-    A
+    10
     >>> _normalize_input('0XF_F')
     255
     >>> _normalize_input('0o7')
