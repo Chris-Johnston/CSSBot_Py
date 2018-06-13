@@ -170,7 +170,7 @@ class Analytics:
         """
 
         if self.database_connection is not None:
-            to_insert = (after.id, str(after.status), str(after.game or "None"), datetime.datetime.now())
+            to_insert = (after.id, str(after.status), str(after.activity or "None"), datetime.datetime.now())
 
             # log the after status
             c = self.database_connection.cursor()
