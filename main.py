@@ -34,7 +34,8 @@ default_extensions = ['cogs.basic',
                       'cogs.courseInfo',
                       'cogs.number_utils',
                       'cogs.hardware_utils',
-                      'cogs.analytics']
+                      'cogs.analytics',
+                      'cogs.gpa']
 
 
 if __name__ == '__main__':
@@ -51,7 +52,7 @@ if __name__ == '__main__':
 async def on_ready():
     # print some stuff when the bot goes online
     print(f'Logged in {client.user.name} - {client.user.id}\nVersion {discord.__version__}')
-    await client.change_presence(game=discord.Game(name='Try __help'))
+    await client.change_presence(activity=discord.Game(name='Try __help'))
 
 # now actually connect the bot
 client.run(config.get(section='Configuration', option='connection_token'),

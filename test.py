@@ -9,11 +9,13 @@ import doctest
 import cogs.basic
 import cogs.courseInfo
 import cogs.number_utils
+import cogs.gpa
 
 test_modules = [
     cogs.basic,
     cogs.courseInfo,
-    cogs.number_utils
+    cogs.number_utils,
+    cogs.gpa
 ]
 
 def load_tests(tests):
