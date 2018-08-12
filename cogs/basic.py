@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import time
 
 # discord.py calls commands cogs
 # so I'm just going to roll with it
@@ -26,6 +27,10 @@ class BasicCog:
     @commands.command(name='github')
     async def github(self, ctx):
         await ctx.send(f'https://github.com/Chris-Johnston/CSSBot_Py')
+
+    @commands.command(name='webcam')
+    async def webcam(self, ctx):
+        await ctx.send(f'http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}')
 
 # add this cog to the bot
 def setup(bot):

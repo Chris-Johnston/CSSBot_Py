@@ -113,11 +113,14 @@ class CourseInfo:
 # 1045 -> '10:45 AM'
 # 12:45 -> '12:45 PM'
 # 13:45 -> '1:45 PM'
+# 0 -> 'N/A'
 def _int_time_to_str(integer_time):
+    if integer_time == 0:
+        return 'N/A'
     try:
         return pandas.to_datetime(integer_time, format='%H%M').strftime('%I:%M %p')
     except ValueError:
-        return 'Invalid Time'
+        return 'N/A'
 
 def _normalise_course_code(code_str):
     """
