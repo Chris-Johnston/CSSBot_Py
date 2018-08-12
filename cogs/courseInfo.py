@@ -108,17 +108,34 @@ class CourseInfo:
                 course_embed.add_field(name='Description', value=description)
         await ctx.send(embed=course_embed)
 
-# convert time integer numbers to a string
-# 845 -> '8:45 AM'
-# 1045 -> '10:45 AM'
-# 12:45 -> '12:45 PM'
-# 13:45 -> '1:45 PM'
-# 0 -> 'N/A'
+
 def _int_time_to_str(integer_time):
+    """
+    Converts an integer time supplied from the course info JSON into a
+    cleaner looking string representation.
+
+    >>> _int_time_to_str(845)
+    '8:45 AM'
+
+    >>> _int_time_to_str(1045)
+    '10:45 AM'
+
+    >>> _int_time_to_str(1245)
+    '12:45 PM'
+
+    >>> _int_time_to_str(1345)
+    '1:45 PM'
+
+    >>> _int_time_to_str(0)
+    'N/A'
+
+    :param integer_time:
+    :return:
+    """
     if integer_time == 0:
         return 'N/A'
     try:
-        return pandas.to_datetime(integer_time, format='%H%M').strftime('%I:%M %p')
+        return pandas.to_datetime(integer_time, format='%H%M').strftime('%-I:%M %p')
     except ValueError:
         return 'N/A'
 
