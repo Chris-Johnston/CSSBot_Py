@@ -128,15 +128,16 @@ class Analytics:
             # commit the changes when done
             self.database_connection.commit()
 
-    async def on_raw_reaction_add(self, emoji, message_id, channel_id, user_id):
+    async def on_raw_reaction_add(self, payload):
         """
         Inserts an ADD into the table when reactions are added
-        :param emoji:
-        :param message_id:
-        :param channel_id:
-        :param user_id:
         :return:
         """
+        message_id = payload.message_id
+        user_id = payload.user_id
+        channel_id = payload.channel_id
+        emoji = payload.emoji
+
         if self.database_connection is not None:
             to_insert = (user_id, str(emoji.name), message_id, channel_id, "ADD", datetime.datetime.now())
 
@@ -145,15 +146,16 @@ class Analytics:
             c.execute("""INSERT INTO reactions VALUES (?, ?, ?, ?, ?, ?)""", to_insert)
             self.database_connection.commit()
 
-    async def on_raw_reaction_remove(self, emoji, message_id, channel_id, user_id):
+    async def on_raw_reaction_remove(self, payload):
         """
         Inserts a REMOVE into the table when reactions are removed
-        :param emoji:
-        :param message_id:
-        :param channel_id:
-        :param user_id:
         :return:
         """
+        message_id = payload.message_id
+        user_id = payload.user_id
+        channel_id = payload.channel_id
+        emoji = payload.emoji
+
         if self.database_connection is not None:
             to_insert = (user_id, str(emoji.name), message_id, channel_id, "REMOVE", datetime.datetime.now())
 
