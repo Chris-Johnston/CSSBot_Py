@@ -23,7 +23,7 @@ sudo apt-get install libffi-dev python3.6-dev
   - Navigate to the Discord API docs and log in: https://discordapp.com/developers/applications/me (if you log in for the first time, it'll probably take you to the app, so go back again).
   - Click on the "New App" button
   - Name your app. Click "Create App"
-  - Click "Crate a Bot User" (Discord API supports a few types of apps/bots, but we are building a bot)
+  - Click "Create a Bot User" (Discord API supports a few types of apps/bots, but we are building a bot)
   - Locate your bot's user token. **Your user token must not be shared with anyone. If it is posted publicly, change it ASAP.**
 - Clone the repo using `git clone https://github.com/Chris-Johnston/CSSBot_Py.git`
 - Create a new file in your CSSBot_Py directory: `config.ini`
