@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import time
-import requests
+import aiohttp
 
 # discord.py calls commands cogs
 # so I'm just going to roll with it
@@ -41,9 +41,9 @@ class BasicCog:
         :param ctx:
         :return:
         """
-        r = requests.get('https://c.xkcd.com/random/comic/')
-        await ctx.send(r.url)
-
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://c.xkcd.com/random/comic/') as resp:
+                await ctx.send(resp.url)
 
 # add this cog to the bot
 def setup(bot):
