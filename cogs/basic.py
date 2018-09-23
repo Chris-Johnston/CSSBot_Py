@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import time
+import requests
 
 # discord.py calls commands cogs
 # so I'm just going to roll with it
@@ -31,6 +32,18 @@ class BasicCog:
     @commands.command(name='webcam')
     async def webcam(self, ctx):
         await ctx.send(f'http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}')
+
+    @commands.command(name='xkcd')
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def get_xkcd(self, ctx):
+        """
+        Replies with a random xkcd comic URL.
+        :param ctx:
+        :return:
+        """
+        r = requests.get('https://c.xkcd.com/random/comic/')
+        await ctx.send(r.url)
+
 
 # add this cog to the bot
 def setup(bot):
