@@ -45,9 +45,11 @@ class BasicCog:
             async with session.get('https://c.xkcd.com/random/comic/') as resp:
                 await ctx.send(resp.url)
 
+
 # add this cog to the bot
 def setup(bot):
     bot.add_cog(BasicCog(bot))
+
 
 def _test_example():
     """
