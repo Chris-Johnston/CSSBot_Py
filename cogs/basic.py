@@ -41,7 +41,6 @@ class BasicCog:
         :param ctx:
         :return:
         """
-        print(id)
         if not id:
             async with aiohttp.ClientSession() as session:
                 async with session.get('https://c.xkcd.com/random/comic/') as resp:
