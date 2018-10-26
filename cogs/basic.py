@@ -35,15 +35,18 @@ class BasicCog:
 
     @commands.command(name='xkcd')
     @commands.cooldown(5, 10, commands.BucketType.user)
-    async def get_xkcd(self, ctx):
+    async def get_xkcd(self, ctx, id: int=None):
         """
         Replies with a random xkcd comic URL.
         :param ctx:
         :return:
         """
-        async with aiohttp.ClientSession() as session:
-            async with session.get('https://c.xkcd.com/random/comic/') as resp:
-                await ctx.send(resp.url)
+        if not id or id < 1:
+            async with aiohttp.ClientSession() as session:
+                async with session.get('https://c.xkcd.com/random/comic/') as resp:
+                    await ctx.send(resp.url)
+        else:
+            await ctx.send(f'https://xkcd.com/{id}/')
 
 
 # add this cog to the bot
