@@ -35,7 +35,7 @@ class BasicCog:
 
     @commands.command(name='xkcd')
     @commands.cooldown(5, 10, commands.BucketType.user)
-    async def get_xkcd(self, ctx, id=None):
+    async def get_xkcd(self, ctx, id: int=None):
         """
         Replies with a random xkcd comic URL.
         :param ctx:
