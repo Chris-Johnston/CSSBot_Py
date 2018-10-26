@@ -41,12 +41,13 @@ class BasicCog:
         :param ctx:
         :return:
         """
-        async with aiohttp.ClientSession() as session:
-            if id is None:
+        print(id)
+        if not id:
+            async with aiohttp.ClientSession() as session:
                 async with session.get('https://c.xkcd.com/random/comic/') as resp:
                     await ctx.send(resp.url)
-            else:
-                return f'https://xkcd.com/{id}/'
+        else:
+            await ctx.send(f'https://xkcd.com/{id}/')
 
 
 # add this cog to the bot
