@@ -27,7 +27,7 @@ with open('config.ini') as config_file:
 print('discordpy')
 print(discord.__version__)
 
-client = commands.Bot(command_prefix='>>', description='https://github.com/Chris-Johnston/CssBot-Py')
+client = commands.Bot(command_prefix='>>', description='https://github.com/Chris-Johnston/CssBot-Py', case_insensitive=True)
 
 # this is where extensions are added by default
 default_extensions = ['cogs.basic',
@@ -35,7 +35,8 @@ default_extensions = ['cogs.basic',
                       'cogs.number_utils',
                       'cogs.hardware_utils',
                       'cogs.analytics',
-                      'cogs.gpa']
+                      'cogs.gpa',
+                      'cogs.manpage']
 
 
 if __name__ == '__main__':
