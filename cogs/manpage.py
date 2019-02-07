@@ -15,8 +15,6 @@ def lookup_manpage_section(name: str) -> int:
 
     >>> lookup_manpage_section("ping")
     8
-    >>> lookup_manpage_section("socket")
-    2
     >>> lookup_manpage_section("aaaaaaa")
     1
     >>> lookup_manpage_section("invalid")
