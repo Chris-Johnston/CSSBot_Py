@@ -104,7 +104,7 @@ class ManPageCog:
         if parsed:
             await ctx.send(f"https://linux.die.net/man/{parsed[1]}/{parsed[0]}")
         else:
-            await ctx.send("Couldn't parse that input. Try something like `echo(1)`, or `ping 8`. The default section number is 1.")
+            await ctx.send("Couldn't parse that input. Try something like `echo(1)`, or `ping`.")
 
 # add this cog to the bot
 def setup(bot):
