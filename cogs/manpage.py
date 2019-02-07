@@ -23,7 +23,7 @@ def parse(query: str) -> tuple:
     >>> parse("     echo    2")
     ("echo", 2)
     >>> parse("   aaaa    8")
-    ("echo", 2)
+    ("aaaa", 8)
     >>> parse("invalid -1")
 
     >>> parse("invalid aaa 123")
@@ -37,28 +37,17 @@ def parse(query: str) -> tuple:
     >>> parse("echo(10)")
     """
     pattern = re.compile(parse_regex, flags=re.IGNORECASE)
-    match = pattern.search
+    match = pattern.search(query)
 
-    name, section_number = pattern.group(1, 2)
+    if match is not None:
+        name, section_number = pattern.group(1, 2)
 
-    # default to 1
-    if section_number is None:
-        section_number = 1
-
-    print('name', name, 'section #', section_number)
-
-    try:
-        if len(split) == 1:
-            # only contains a single term
-            name = split[0]
-        elif len(split) == 2:
-            name = split[0]
+        # default to 1
+        if section_number is None:
+            section_number = 1
+        else:
             section_number = int(section_number)
-            if not (0 < section_number <= 8):
-                return None
         return name, section_number
-    except ValueError:
-        return None
     return None
 
 # setup
