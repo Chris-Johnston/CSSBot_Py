@@ -32,6 +32,10 @@ class BasicCog:
     @commands.command(name='webcam')
     async def webcam(self, ctx):
         await ctx.send(f'http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}')
+        
+    @commands.command(name='405')
+    async def i405(self, ctx):
+        await ctx.send(f'https://images.wsdot.wa.gov/nw/405vc03022.jpg?t={time.time()}')
 
     @commands.command(name='xkcd')
     @commands.cooldown(5, 10, commands.BucketType.user)
