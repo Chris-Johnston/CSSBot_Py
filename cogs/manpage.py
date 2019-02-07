@@ -55,7 +55,7 @@ class ManPageCog:
         self.bot = bot
 
     # ping command
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.command('man', aliases=["manpage"])
     async def man(self, ctx, *, query: str):
         """
