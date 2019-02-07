@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import re
 
-parse_regex = """^\s*([A-Za-z0-9\_\-]+)(?:(?:\w*\(*)([1-8])(?:[\s]*\)*))?\s*$"""
+parse_regex = r"^\s*([A-Za-z0-9\_\-]+)(?:(?:\s*\(?)([1-8])\)?)?\s*$"
 
 def parse(query: str) -> tuple:
     """
@@ -15,15 +15,15 @@ def parse(query: str) -> tuple:
     Does not handle non numeric categories.
 
     >>> parse("echo(1)")
-    ("echo", 1)
+    ('echo', 1)
     >>> parse("echo")
-    ("echo", 1)
+    ('echo', 1)
     >>> parse("     echo    ")
-    ("echo", 1)
+    ('echo', 1)
     >>> parse("     echo    2")
-    ("echo", 2)
+    ('echo', 2)
     >>> parse("   aaaa    8")
-    ("aaaa", 8)
+    ('aaaa', 8)
     >>> parse("invalid -1")
 
     >>> parse("invalid aaa 123")
@@ -35,18 +35,17 @@ def parse(query: str) -> tuple:
     >>> parse("invalid 10")
 
     >>> parse("echo(10)")
+
     """
-    pattern = re.compile(parse_regex, flags=re.IGNORECASE)
+    pattern = re.compile(parse_regex, flags=re.I)
     match = pattern.search(query)
-
-    if match is not None:
-        name, section_number = pattern.group(1, 2)
-
+    if match:
+        name, section_number = match.groups()
         # default to 1
-        if section_number is None:
-            section_number = 1
-        else:
+        if section_number:
             section_number = int(section_number)
+        else:
+            section_number = 1
         return name, section_number
     return None
 
