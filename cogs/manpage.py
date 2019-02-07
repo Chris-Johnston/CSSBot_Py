@@ -63,7 +63,11 @@ class ManPageCog:
         https://linux.die.net/
         and replies with the link
         """
-        await ctx.send("todo")
+        # try to parse the query
+        parsed = parse(query)
+        if parsed:
+            await ctx.send(f"https://linux.die.net/man/{parsed[1]}/{parsed[0]}")
+        await ctx.send("Couldn't parse that input. Try something like `echo(1)`, or `ping 8`. The default section number is 1.")
 
 # add this cog to the bot
 def setup(bot):
