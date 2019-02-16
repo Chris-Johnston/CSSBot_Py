@@ -29,7 +29,7 @@ class Analytics:
             path = config.get(section='Configuration',
                               option='analytics_database')
             # open the database
-            self.database_connection = sqlite3.connect(path)
+            self.database_connection = sqlite3.connect(path, timeout=15)
 
             # setup the tables of the database
             self._setup_tables()

@@ -36,7 +36,8 @@ default_extensions = ['cogs.basic',
                       'cogs.hardware_utils',
                       'cogs.analytics',
                       'cogs.gpa',
-                      'cogs.manpage']
+                      'cogs.manpage',
+                      'cogs.markov']
 
 
 if __name__ == '__main__':

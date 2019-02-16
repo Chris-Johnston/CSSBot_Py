@@ -11,13 +11,15 @@ import cogs.courseInfo
 import cogs.number_utils
 import cogs.gpa
 import cogs.manpage
+import cogs.markov
 
 test_modules = [
     cogs.basic,
     cogs.courseInfo,
     cogs.number_utils,
     cogs.gpa,
-    cogs.manpage
+    cogs.manpage,
+    cogs.markov
 ]
 
 def load_tests(tests):
