@@ -83,7 +83,7 @@ class Markov:
         self.database = sqlite3.connect(self.database_path, timeout=15)
         self.c = self.database.cursor()
 
-        if user_id is not None or user_id != 0:
+        if user_id is None or user_id == 0:
             self.c.execute("SELECT contents FROM messages WHERE guildId = :guild", {"guild": guild_id})
         else:
             self.c.execute("SELECT contents FROM messages WHERE guildId = :guild AND authorId = :author", {"guild": guild_id, "author": user_id})
