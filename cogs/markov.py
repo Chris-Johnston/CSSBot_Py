@@ -138,8 +138,7 @@ class Markov:
             return result
         return None
 
-    # for some reason, using underscores would call both markov_user and markov.. weird.
-    @commands.command("markov-user")
+    @commands.command("markov_user")
     @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.guild_only()
     async def markov_user(self, ctx, user: discord.User, words: int = 20):
@@ -157,7 +156,7 @@ class Markov:
         """
         await ctx.send(self.predict(words, ctx.guild.id))
 
-    @commands.command("markov-hint-user")
+    @commands.command("markov_hint_user")
     @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.guild_only()
     async def markov_user_hint(self, ctx, user: discord.User, start_word: str, words: int = 20):
@@ -166,7 +165,7 @@ class Markov:
         """
         await ctx.send(self.predict(words, ctx.guild.id, user.id, start_word))
 
-    @commands.command("markov-hint")
+    @commands.command("markov_hint")
     @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.guild_only()
     async def markov_hint(self, ctx, start_word: str, words: int = 20):
