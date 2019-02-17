@@ -86,9 +86,9 @@ class Markov:
         c = database.cursor()
 
         if user_id is None or user_id == 0:
-            c.execute("SELECT contents FROM messages WHERE guildId = :guild", {"guild": guild_id})
+            c.execute("SELECT contents FROM messages WHERE guildId = :guild ORDER BY timestamp DESC LIMIT 50000", {"guild": guild_id})
         else:
-            c.execute("SELECT contents FROM messages WHERE guildId = :guild AND authorId = :author", {"guild": guild_id, "author": user_id})
+            c.execute("SELECT contents FROM messages WHERE guildId = :guild AND authorId = :author ORDER BY timestamp DESC LIMIT 50000", {"guild": guild_id, "author": user_id})
         # set of all the words that exist, normalized
         words = []
         # set of all words contained, for faster checking if it exists
