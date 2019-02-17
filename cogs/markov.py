@@ -46,9 +46,7 @@ def make_word_pairs(words: list) -> tuple:
     Makes an association of one word to another
     """
     for x in range(len(words) - 1):
-        w1 = normalize_word(words[x])
-        w2 = normalize_word(words[x + 1])
-        yield (w1, w2)
+        yield words[x], words[x + 1]
 
 class Markov:
     """
@@ -63,7 +61,6 @@ class Markov:
         with open('config.ini') as config_file:
             config.read_file(config_file)
 
-        self.database = None
         self.database_path = None
 
         if config.has_option(section='Configuration',
@@ -75,25 +72,42 @@ class Markov:
         else:
             print("database path not provided")
 
-    def get_data(self, guild_id: int, user_id: int = None) -> list:
+    def get_data(self, guild_id: int, user_id: int = None) -> tuple:
         """
-        Gets a list of all messages, split by whitespace from that user,
+        Gets a list of word indexes and a list of all unique words.
+        Split by whitespace and normalized from that user,
         or everyone if user_id is None.
         """
-        self.database = sqlite3.connect(self.database_path, timeout=15)
-        self.c = self.database.cursor()
+        database = sqlite3.connect(self.database_path, timeout=15)
+        c = database.cursor()
 
         if user_id is None or user_id == 0:
-            self.c.execute("SELECT contents FROM messages WHERE guildId = :guild", {"guild": guild_id})
+            c.execute("SELECT contents FROM messages WHERE guildId = :guild", {"guild": guild_id})
         else:
-            self.c.execute("SELECT contents FROM messages WHERE guildId = :guild AND authorId = :author", {"guild": guild_id, "author": user_id})
+            c.execute("SELECT contents FROM messages WHERE guildId = :guild AND authorId = :author", {"guild": guild_id, "author": user_id})
+        # set of all the words that exist, normalized
         words = []
-        rows = self.c.fetchall()
+        # set of all words contained, for faster checking if it exists
+        # if memory is still an issue, this can be removed
+        word_set = set()
+        # list of all words contained, by index in the words set
+        word_indexes = []
+        rows = c.fetchall()
         for r in rows:
-            message = r[0]
-            # append all words in this message to the list of words
-            words.extend(message.split())
-        return words
+            for word in r[0].split():
+                word = normalize_word(word)
+                index = -1
+                if word in word_set:
+                    # get the index
+                    index = words.index(word)
+                else:
+                    # add the word to the set and list
+                    words.append(word)
+                    word_set.add(word)
+                    index = len(words) - 1
+                word_indexes.append(index)
+        database.close()
+        return words, word_indexes
 
     def predict(self, num_words: int, guild_id: int, user_id: int = None, start_word: str = None) -> str:
         """
@@ -107,23 +121,24 @@ class Markov:
             num_words = 20
 
         # get all words in this server from this user (or all users)
-        words = self.get_data(guild_id, user_id)
+        words, word_indexes = self.get_data(guild_id, user_id)
         if not words:
             return "No data found!"
         # holds list of associated words with each other
         word_dict = {}
-        for word_1, word_2 in make_word_pairs(words):
+        for word_1, word_2 in make_word_pairs(word_indexes):
             if word_1 in word_dict.keys():
                 word_dict[word_1].append(word_2)
             else:
                 word_dict[word_1] = [word_2]
 
         first_word = None
-        if start_word:
-            first_word = normalize_word(start_word)
+        # get the first word if it exists in the set of existing words already
+        if start_word and normalize_word(start_word) in words:
+            first_word = words.index(normalize_word(start_word))
         else:
             # pick a random starting word
-            first_word = normalize_word(np.random.choice(words))
+            first_word = np.random.choice(word_indexes)
 
         chain = [first_word]
         try:
@@ -132,11 +147,16 @@ class Markov:
                 w = word_dict[chain[-1]]
                 chain.append(np.random.choice(w))
         except KeyError:
-            return "Error, starting word was not in set of existing words."
-        result = ' '.join(chain)
+            # ignore this error, just means that a word did not have a next word
+            pass
+        if len(chain) == 0:
+            return "Didn't get any results."
+        # lookup all words from the indexes
+        lookup = [words[i] for i in chain]
+        result = ' '.join(lookup)
         if result:
             return result
-        return None
+        return "Didn't get any results."
 
     @commands.command("markov_user")
     @commands.cooldown(5, 30, commands.BucketType.user)

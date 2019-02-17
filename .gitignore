@@ -1,4 +1,5 @@
 .idea/*
+*.db
 
 # config file
 # this should never be committed, this is where your connection token goes
