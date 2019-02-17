@@ -89,7 +89,7 @@ class Markov:
         words = []
         # set of all words contained, for faster checking if it exists
         # if memory is still an issue, this can be removed
-        word_set = set()
+        # word_set = set()
         # list of all words contained, by index in the words set
         word_indexes = []
         rows = c.fetchall()
@@ -97,13 +97,13 @@ class Markov:
             for word in r[0].split():
                 word = normalize_word(word)
                 index = -1
-                if word in word_set:
+                if word in words:
                     # get the index
                     index = words.index(word)
                 else:
                     # add the word to the set and list
                     words.append(word)
-                    word_set.add(word)
+                    # word_set.add(word)
                     index = len(words) - 1
                 word_indexes.append(index)
         database.close()
