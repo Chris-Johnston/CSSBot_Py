@@ -10,6 +10,9 @@ import configparser
 import datetime
 import numpy as np
 
+# trust me, this contains a zero-width space
+zero_width_space = '​'
+
 def normalize_word(word: str) -> str:
     """
     Normalizes a word for use in the marov chain
@@ -39,6 +42,7 @@ def normalize_word(word: str) -> str:
     word = word.replace('_', '')
     word = word.replace('(', '')
     word = word.replace(')', '')
+    word = word.replace('@', f'@{zero_width_space}')
     return word
 
 def make_word_pairs(words: list) -> tuple:
