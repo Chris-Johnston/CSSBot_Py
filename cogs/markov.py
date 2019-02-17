@@ -165,7 +165,8 @@ class Markov:
         """
         Replies with a predicted phrase from the specified user.
         """
-        await ctx.send(self.predict(words, ctx.guild.id, user.id))
+        async with ctx.channel.typing():
+            await ctx.send(self.predict(words, ctx.guild.id, user.id))
 
     @commands.command("markov")
     @commands.cooldown(5, 30, commands.BucketType.user)
@@ -174,7 +175,8 @@ class Markov:
         """
         Replies with a predicted phrase from all known users.
         """
-        await ctx.send(self.predict(words, ctx.guild.id))
+        async with ctx.channel.typing():
+            await ctx.send(self.predict(words, ctx.guild.id))
 
     @commands.command("markov_hint_user")
     @commands.cooldown(5, 30, commands.BucketType.user)
@@ -183,7 +185,8 @@ class Markov:
         """
         Replies with a predicted phrase from the specified user, starting with a given word.
         """
-        await ctx.send(self.predict(words, ctx.guild.id, user.id, start_word))
+        async with ctx.channel.typing():
+            await ctx.send(self.predict(words, ctx.guild.id, user.id, start_word))
 
     @commands.command("markov_hint")
     @commands.cooldown(5, 30, commands.BucketType.user)
@@ -192,7 +195,8 @@ class Markov:
         """
         Replies with a predicted phrase starting with a given word.
         """
-        await ctx.send(self.predict(words, ctx.guild.id, None, start_word))
+        async with ctx.channel.typing():
+            await ctx.send(self.predict(words, ctx.guild.id, None, start_word))
 
 def setup(bot):
     bot.add_cog(Markov(bot))
