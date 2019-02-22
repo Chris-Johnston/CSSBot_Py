@@ -6,6 +6,70 @@ import aiohttp
 # discord.py calls commands cogs
 # so I'm just going to roll with it
 
+# trust me, this contains a zero-width space
+zero_width_space = '​'
+
+def sanitize_ping(message: str) -> str:
+    """
+    Checks that a message is sanitized with a zero width space
+
+    >>> sanitize_ping("@test")
+    '@​test'
+    >>> sanitize_ping("@ test")
+    '@​ test'
+    >>> sanitize_ping(None)
+
+    """
+    if message is None:
+        return None
+    return message.replace('@', '@' + zero_width_space)
+
+def generate_claps(message: str, emoji: str) -> str:
+    """
+    Generates :clap: a :clap: message :clap: separated :clap:
+    with :clap: emojis
+
+    >>> generate_claps("test", "a") # Don't embed emoji in source code
+    'test'
+    >>> generate_claps("test message", "a")
+    'test a message'
+    >>> generate_claps("", "a")
+    >>> generate_claps(None, "a")
+    >>> generate_claps("test message", '')
+
+    """
+    if message is None or message.strip() == "" or emoji is None or emoji.strip() == "":
+        return None
+
+    # no pings!
+    message = sanitize_ping(message)
+    message = message.strip()
+    # if there were no changes, then don't modify anything
+    emoji = sanitize_ping(emoji)
+    emoji = emoji.strip()
+    if emoji is None or emoji == "":
+        return message
+    split = message.split()
+    # no point when there's nothing to split
+    if len(split) <= 1:
+        return message
+    ret = ''
+    for word in split[:-1]:
+        ret += f"{word} {emoji} "
+    ret += split[-1]
+    return ret
+
+def _test_example():
+    """
+    Example of how to incorporate doctests
+    
+    >>> _test_example()
+    'Pong!'
+
+    :return: 'Pong!'
+    """
+    return 'Pong!'
+
 # setup
 class BasicCog:
     def __init__(self, bot):
@@ -42,7 +106,6 @@ class BasicCog:
     async def get_xkcd(self, ctx, id: int=None):
         """
         Replies with a random xkcd comic URL.
-        :param ctx:
         :return:
         """
         if not id or id < 1:
@@ -51,24 +114,48 @@ class BasicCog:
                     await ctx.send(resp.url)
         else:
             await ctx.send(f'https://xkcd.com/{id}/')
+    
+    @commands.command(name=u"clap")
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap(self, ctx, emoji, *, message):
+        await ctx.send(generate_claps(message, emoji))
 
+    @commands.command(name=u"\U0001F44F", hidden = True)
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap_no_skin_tone(self, ctx, *, message):
+        emoji = u"\U0001F44F"
+        await ctx.send(generate_claps(message, u"\U0001F44F"))
+
+    # hack to get around the issue of skin tone modifiers
+
+    @commands.command(name=u"\U0001F44F\U0001F3FB", hidden = True)
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap_skin_tone_1(self, ctx, *, message):
+        await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FB"))
+    
+    @commands.command(name=u"\U0001F44F\U0001F3FC", hidden = True)
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap_skin_tone_2(self, ctx, *, message):
+        await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FC"))
+    
+    @commands.command(name=u"\U0001F44F\U0001F3FD", hidden = True)
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap_skin_tone_3(self, ctx, *, message):
+        await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FD"))
+
+    @commands.command(name=u"\U0001F44F\U0001F3FE", hidden = True)
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap_skin_tone_4(self, ctx, *, message):
+        await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FE"))
+
+    @commands.command(name=u"\U0001F44F\U0001F3FF", hidden = True)
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def clap_skin_tone_5(self, ctx, *, message):
+        await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FF"))
 
 # add this cog to the bot
 def setup(bot):
     bot.add_cog(BasicCog(bot))
-
-
-def _test_example():
-    """
-    Example of how to incorporate doctests
-    
-    >>> _test_example()
-    'Pong!'
-
-    :return: 'Pong!'
-    """
-
-    return 'Pong!'
 
 # optional, but helpful for testing via the shell
 if __name__ == '__main__':
