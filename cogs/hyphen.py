@@ -60,6 +60,10 @@ class HyphenCog:
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command("hyphen")
+    async def hyphen(self, ctx):
+        await ctx.send("https://xkcd.com/37/")
+
     async def on_message(self, message):
         """
         Checks to see if a message contains a hyphen
