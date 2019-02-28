@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import time
 import aiohttp
+import urllib.parse
 
 # discord.py calls commands cogs
 # so I'm just going to roll with it
@@ -114,6 +115,24 @@ class BasicCog:
                     await ctx.send(resp.url)
         else:
             await ctx.send(f'https://xkcd.com/{id}/')
+
+    @commands.command(name='lmgtfy')
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def lmgtfy(self, ctx, *, search: str):
+        """
+        Generates a LMGTFY link for the given search query
+        """
+        encoded = urllib.parse.quote_plus(search)
+        await ctx.send(f'Was that so hard? https://lmgtfy.com/?q={encoded}')
+
+    @commands.command(name='g', aliases=["google", "search"])
+    @commands.cooldown(5, 10, commands.BucketType.user)
+    async def google(self, ctx, *, search: str):
+        """
+        Generates a Google search link for the given search query
+        """
+        encoded = urllib.parse.quote_plus(search)
+        await ctx.send(f'Really!? How lazy are you? https://www.google.com/search?q={encoded}')
     
     @commands.command(name=u"clap")
     @commands.cooldown(5, 10, commands.BucketType.user)
@@ -127,7 +146,6 @@ class BasicCog:
         await ctx.send(generate_claps(message, u"\U0001F44F"))
 
     # hack to get around the issue of skin tone modifiers
-
     @commands.command(name=u"\U0001F44F\U0001F3FB", hidden = True)
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def clap_skin_tone_1(self, ctx, *, message):
