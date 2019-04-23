@@ -69,9 +69,7 @@ class CrobCog(commands.Cog):
         guild = await self.bot.fetch_guild(payload.guild_id)
         channel = self.bot.get_channel(payload.channel_id)
         if not channel:
-            return        
-
-        print(payload.emoji.name, type(payload.emoji.name), CAWW, user, user.bot, payload.emoji == CAWW)
+            return
         if user and not user.bot and payload.emoji.name == CAWW:
             message = await channel.fetch_message(payload.message_id)
 
