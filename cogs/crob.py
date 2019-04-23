@@ -73,10 +73,15 @@ class CrobCog(commands.Cog):
         if user and not user.bot and payload.emoji.name == CAWW:
             message = await channel.fetch_message(payload.message_id)
 
+            if not message.content or message.content.isspace():
+                return
+
             # check if already CAWWed
             for r in message.reactions:
                 if r.emoji == CAWW and r.me:
                     return
+            await message.add_reaction(CAWW)
+            
             if isinstance(channel, discord.TextChannel):
                 await channel.send(
                     f'Translation: `{translate_message(message.content)}`'
