@@ -13,6 +13,7 @@ import cogs.gpa
 import cogs.manpage
 import cogs.markov
 import cogs.hyphen
+import cogs.crob
 
 test_modules = [
     cogs.basic,
@@ -21,7 +22,8 @@ test_modules = [
     cogs.gpa,
     cogs.manpage,
     cogs.markov,
-    cogs.hyphen
+    cogs.hyphen,
+    cogs.crob
 ]
 
 def load_tests(tests):
