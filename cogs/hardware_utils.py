@@ -5,7 +5,7 @@ from discord.ext import commands
 from submodules.hardware_scripts.src.boolean_expr_parser import BooleanExpr
 from submodules.hardware_scripts.src.page_address_calc import AddressParser
 
-class HardwareUtilsCog:
+class HardwareUtilsCog(commands.Cog):
     '''
     Collection of discord commands to encapsulate other scripts
     '''

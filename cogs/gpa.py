@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-class GPACog:
+class GPACog(commands.Cog):
     """
     Utility commands for calculating GPA to and from a percentage.
 

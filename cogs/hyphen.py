@@ -56,7 +56,7 @@ def replace(input: str) -> bool:
         return input[0:start_index] + f'**{adjective} {ass}-{noun}**' + input[end_index:]
     return None
 
-class HyphenCog:
+class HyphenCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

@@ -4,7 +4,7 @@ discord bot cog that is used for various number utility functions
 import discord
 from discord.ext import commands
 
-class NumberUtilsCog:
+class NumberUtilsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

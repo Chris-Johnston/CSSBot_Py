@@ -84,7 +84,7 @@ def parse(query: str) -> tuple:
     return None
 
 # setup
-class ManPageCog:
+class ManPageCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

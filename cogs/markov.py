@@ -52,7 +52,7 @@ def make_word_pairs(words: list) -> tuple:
     for x in range(len(words) - 1):
         yield words[x], words[x + 1]
 
-class Markov:
+class Markov(commands.Cog):
     """
     Commands for mocking user's messages using Markov chains.
     """

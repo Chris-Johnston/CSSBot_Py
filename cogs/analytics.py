@@ -8,7 +8,7 @@ import datetime
 
 # stuff that handles user analytics
 # no commands are associated with this
-class Analytics:
+class Analytics(commands.Cog):
     """Set of handlers that log use analytics.
 
     """

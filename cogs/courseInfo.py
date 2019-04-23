@@ -19,7 +19,7 @@ import pandas
 # http://www.washington.edu/students/crscatb/css.html
 
 # course info related commands
-class CourseInfo:
+class CourseInfo(commands.Cog):
 
     def __init__(self, bot):
         # open the config file in the parent directory
