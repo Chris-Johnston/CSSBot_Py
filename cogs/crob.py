@@ -17,6 +17,8 @@ def translate_message(input: str) -> str:
     >>> translate_message("Y'all ever just YEET?")
     'CAAWW CAAW CAAW CAAW?'
     """
+    # escape the ` character for discord
+    input = input.replace('`', r'\`')
     # handles punctuation... somewhat
     return re.sub(r'([a-zA-Z\']+)', translate_match, input, flags=re.IGNORECASE)
 
