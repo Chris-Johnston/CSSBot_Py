@@ -14,6 +14,7 @@ import cogs.manpage
 import cogs.markov
 import cogs.hyphen
 import cogs.crob
+import cogs.starboard
 
 test_modules = [
     cogs.basic,
@@ -23,7 +24,8 @@ test_modules = [
     cogs.manpage,
     cogs.markov,
     cogs.hyphen,
-    cogs.crob
+    cogs.crob,
+    cogs.starboard
 ]
 
 def load_tests(tests):
