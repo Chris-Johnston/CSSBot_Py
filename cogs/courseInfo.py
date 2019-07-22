@@ -7,6 +7,7 @@ import re
 from pprint import pprint
 from bs4 import BeautifulSoup # html parser
 import pandas
+import urllib
 
 # course info module
 
@@ -104,8 +105,11 @@ class CourseInfo(commands.Cog):
             if element.contents:
                 # get the element that contains the description (hard coded)
                 # and add the link to view course details in MyPlan
-                description=f'{element.contents[2]}\n[{element.contents[4].string}]({element.contents[4].get("href")})'
+                description=f'{element.contents[2]}'
                 course_embed.add_field(name='Description', value=description)
+        
+        course_embed.url = f"https://myplan.uw.edu/course/#/courses/{urllib.quote_plus(course_code)}"
+
         await ctx.send(embed=course_embed)
 
 
