@@ -12,7 +12,7 @@ import datetime
 # star emoji used to update the starboard
 STAR = u"\u2B50"
 # require x or more stars to be posted on the starboard
-STAR_THRESHOLD = 1
+STAR_THRESHOLD = 3
 
 # does not care about stuff before or after the link
 MESSAGE_LINK_REGEX = re.compile(r'.*https:\/\/discordapp.com\/channels\/(\d+)\/(\d+)\/(\d+).*', flags=re.RegexFlag.I)
@@ -194,10 +194,20 @@ class StarboardCog(commands.Cog):
                 self.star_posts[message_id] = sent_message.id
 
     @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        """
+        Reaction removed handler
+        """
+        await self.update_reaction(payload)
+
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload): # consider doing reaction removed as well?
         """
         Reaction added handler
         """
+        await self.update_reaction(payload)
+
+    async def update_reaction(self, payload):
         # only respond to stars
         if payload.emoji.name != STAR:
             return
