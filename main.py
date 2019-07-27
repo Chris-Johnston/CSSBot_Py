@@ -39,7 +39,8 @@ default_extensions = ['cogs.basic',
                       'cogs.manpage',
                       'cogs.markov',
                       'cogs.hyphen',
-                      'cogs.crob']
+                      'cogs.crob',
+                      'cogs.starboard']
 
 
 if __name__ == '__main__':
