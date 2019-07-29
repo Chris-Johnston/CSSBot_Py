@@ -121,19 +121,21 @@ class StarboardCog(commands.Cog):
         """
         guild = self.bot.get_guild(guild_id)
         if not guild:
-            return None
+            return []
         channel = guild.get_channel(channel_id)
         if not isinstance(channel, discord.TextChannel):
-            return None
+            return []
         message = await channel.fetch_message(message_id)
         if not message:
-            return None
+            return []
         star_react = filter(lambda x: x.emoji == STAR, message.reactions)
         if star_react:
             # need to instead return the set of all 
-            users = await next(star_react).users().flatten()
-            return [u.id for u in users]
-        return None
+            users_iter = next(star_react, None)
+            if users_iter:
+                users = await users_iter.users().flatten()
+                return [u.id for u in users]
+        return []
 
     async def get_message_stars(self, guild_id, channel_id, message_id, starboard_channel_id) -> int:
         """
@@ -144,33 +146,38 @@ class StarboardCog(commands.Cog):
         original_stars = await self.get_starred_users(guild_id, channel_id, message_id)
         if message_id in self.star_posts:
             # need to also get stars from the starboard
-            starboard_stars = await self.get_starred_users(guild_id, starboard_channel_id, self.star_posts[message_id])
-            # merge the two lists
-            return len(merge_unique(original_stars, starboard_stars))
+            starboard_stars = await self.get_starred_users(guild_id, starboard_channel_id, self.star_posts[message_id][0])
+            if starboard_stars:
+                # merge the two lists
+                return len(merge_unique(original_stars, starboard_stars))
         return len(original_stars)
     
     async def update_starboard(self, starboard_channel, guild_id, channel_id, message_id):
         """
         Updates an existing starboard post with a new count of stars.
-        Message id is the post in the starboard
         """
         # get the url of the original message from the starboard post contents
         guild = self.bot.get_guild(guild_id)
         if not guild:
             return
-        channel = guild.get_channel(channel_id)
-        if not isinstance(channel, discord.TextChannel):
-            return
-        starboard_message = await channel.fetch_message(message_id)
-        if not starboard_message:
-            return
-        # parse the message link
-        original_message_values = parse_message_link(starboard_message.content)
-        if original_message_values:
-            original_guild, original_channel, original_message = original_message_values
+        if channel_id == starboard_channel.id:
+            starboard_message = await starboard_channel.fetch_message(message_id)
+            if not starboard_message:
+                return # fetched starboard message was null
+            # parse the message link
+            original_message_values = parse_message_link(starboard_message.content)
+            if original_message_values:
+                original_guild, original_channel, original_message = original_message_values
+            else:
+                # no url, so probably not a legit starboard post, skip
+                return
         else:
-            # no url, so probably not a legit starboard post, skip
-            return
+            if message_id in self.star_posts:
+                starboard_message_id, _ = self.star_posts[message_id]
+                starboard_message = await starboard_channel.fetch_message(starboard_message_id)
+                if not starboard_message:
+                    return # fetched starboard message null
+                original_guild, original_channel, original_message = guild_id, channel_id, message_id
         # sanity check to prevent going across guilds
         assert guild_id == original_guild
 
@@ -179,7 +186,12 @@ class StarboardCog(commands.Cog):
         if stars >= STAR_THRESHOLD:
             message, embed = await self.generate_message(guild_id, original_channel, original_message, stars)
             if message and embed:
-                await starboard_message.edit(content = message, embed = embed)        
+                # edit existing starboard message
+                await starboard_message.edit(content = message, embed = embed)
+        else:
+            # under threshold, delete and remove from star posts
+            await starboard_message.delete()
+            del self.star_posts[original_message]
 
     async def post_starboard(self, starboard_channel, guild_id, channel_id, message_id):
         """
@@ -191,7 +203,7 @@ class StarboardCog(commands.Cog):
             if message and embed:
                 sent_message = await starboard_channel.send(content = message, embed = embed)
                 # register this in the dict of messages to their starboard posts
-                self.star_posts[message_id] = sent_message.id
+                self.star_posts[message_id] = (sent_message.id, channel_id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -228,7 +240,7 @@ class StarboardCog(commands.Cog):
             # TODO: set up a proper database for associating starred messages to their resulting post
             if payload.message_id in self.star_posts:
                 # another reaction was added to the starred message, update the starboard post if the resulting # of stars has changed
-                await self.update_starboard(starboard_channel, payload.guild_id, payload.channel_id, self.star_posts[payload.message_id])
+                await self.update_starboard(starboard_channel, payload.guild_id, payload.channel_id, payload.message_id)
             else:
                 # a message was starred that is not in this dict
                 # means that either the bot was restarted, or this message hasn't been posted to the starboard yet
