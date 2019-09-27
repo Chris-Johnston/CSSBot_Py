@@ -118,6 +118,7 @@ class Analytics(commands.Cog):
                       to_insert)
             database_connection.close()
 
+    @commands.Cog.listener()
     async def on_ready(self):
         """
         Populates the userData table with information for each user
@@ -134,6 +135,7 @@ class Analytics(commands.Cog):
             database_connection.commit()
             database_connection.close()
 
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         """
         Inserts an ADD into the table when reactions are added
@@ -154,6 +156,7 @@ class Analytics(commands.Cog):
             database_connection.commit()
             database_connection.close()
 
+    @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
         """
         Inserts a REMOVE into the table when reactions are removed
@@ -174,6 +177,7 @@ class Analytics(commands.Cog):
             database_connection.commit()
             database_connection.close()
 
+    @commands.Cog.listener()
     async def on_member_update(self, before, after):
         """Inserts into the user status table when the user status has changed
         :param before: the Member value before the updated their status
@@ -193,6 +197,7 @@ class Analytics(commands.Cog):
             database_connection.commit()
             database_connection.close()
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         """Inserts a new row into the messages table when a message is sent.
 

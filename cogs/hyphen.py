@@ -64,6 +64,7 @@ class HyphenCog(commands.Cog):
     async def hyphen(self, ctx):
         await ctx.send("https://xkcd.com/37/")
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         """
         Checks to see if a message contains a hyphen
