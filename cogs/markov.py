@@ -178,7 +178,20 @@ class Markov(commands.Cog):
     @commands.command("markov_joke")
     @commands.cooldown(5, 30, commands.BucketType.user)
     @commands.guild_only()
-    async def markov_joke(self, ctx, user: discord.User, words: int = 15):
+    async def markov_joke(self, ctx, words: int = random.randint(15, 26)):
+        """
+        Replies with a Markov chain joke sourced from content from all known users.
+        """
+        async with ctx.channel.typing():
+            await ctx.send(self.add_punctuation(self.predict(words, ctx.guild.id)))
+
+    @commands.command("markov_joke_user")
+    @commands.cooldown(5, 30, commands.BucketType.user)
+    @commands.guild_only()
+    async def markov_joke_user(self, ctx, user: discord.User, words: int = random.randint(15, 26)):
+        """
+        Replies with a Markov chain joke sourced from content from the indicated user.
+        """
         async with ctx.channel.typing():
             await ctx.send(self.add_punctuation(self.predict(words, ctx.guild.id, user.id)))
 
