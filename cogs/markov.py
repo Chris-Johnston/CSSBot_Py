@@ -173,7 +173,7 @@ class Markov(commands.Cog):
             idx = random.randint(1, len(words) - 1)
         words[idx] = words[idx] + "?\n"
         words[len(words) - 1] = words[len(words) - 1] + "!"
-        return words
+        return ' '.join(words)
 
     @commands.command("markov_joke")
     @commands.cooldown(5, 30, commands.BucketType.user)
