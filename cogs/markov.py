@@ -9,6 +9,7 @@ import sqlite3
 import configparser
 import datetime
 import numpy as np
+import random
 
 # trust me, this contains a zero-width space
 zero_width_space = '​'
@@ -161,6 +162,38 @@ class Markov(commands.Cog):
         if result:
             return result
         return "Didn't get any results."
+
+    def add_punctuation(self, result):
+        if result == "Didn't get any results.":
+            return result
+        words = result.split()
+        if len(words) > 2:
+            idx = 0
+        else:
+            idx = random.randint(1, len(words) - 1)
+        words[idx] = words[idx] + "?\n"
+        words[len(words) - 1] = words[len(words) - 1] + "!"
+        return words
+
+    @commands.command("markov_joke")
+    @commands.cooldown(5, 30, commands.BucketType.user)
+    @commands.guild_only()
+    async def markov_joke(self, ctx, words: int = random.randint(15, 26)):
+        """
+        Replies with a Markov chain joke sourced from content from all known users.
+        """
+        async with ctx.channel.typing():
+            await ctx.send(self.add_punctuation(self.predict(words, ctx.guild.id)))
+
+    @commands.command("markov_joke_user")
+    @commands.cooldown(5, 30, commands.BucketType.user)
+    @commands.guild_only()
+    async def markov_joke_user(self, ctx, user: discord.User, words: int = random.randint(15, 26)):
+        """
+        Replies with a Markov chain joke sourced from content from the indicated user.
+        """
+        async with ctx.channel.typing():
+            await ctx.send(self.add_punctuation(self.predict(words, ctx.guild.id, user.id)))
 
     @commands.command("markov_user")
     @commands.cooldown(5, 30, commands.BucketType.user)
