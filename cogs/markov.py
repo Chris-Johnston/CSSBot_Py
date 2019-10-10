@@ -167,7 +167,7 @@ class Markov(commands.Cog):
         if result == "Didn't get any results.":
             return result
         words = result.split()
-        if len(words) > 2:
+        if len(words) < 2:
             idx = 0
         else:
             idx = random.randint(1, len(words) - 1)
