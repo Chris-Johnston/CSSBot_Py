@@ -11,6 +11,7 @@ from discord.ext import commands
 import re
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # this is probably the best regex I've ever made
 hyphen_regex = r"(\w+)-(ass) (\w+)"

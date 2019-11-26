@@ -4,6 +4,7 @@ import re
 import subprocess
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 parse_regex = r"^\s*([A-Za-z0-9\_\-]+)(?:(?:\s*\(?)([1-8])\)?)?\s*$"
 lookup_regex = r"^[\/\w+]+\/man\/man([1-8])\/[\w\.]+$"

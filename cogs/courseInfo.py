@@ -10,6 +10,7 @@ import pandas
 import urllib.parse
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # course info module
 

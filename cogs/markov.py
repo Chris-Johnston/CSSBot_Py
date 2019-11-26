@@ -12,6 +12,7 @@ import numpy as np
 import random
 import logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # trust me, this contains a zero-width space
 zero_width_space = '​'
