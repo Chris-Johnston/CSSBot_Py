@@ -1,6 +1,6 @@
 yarl<1.2
-discord.py==1.0.1
-pandas==0.22.0
-beautifulsoup4==4.6.0
-pylint==1.7.3
-aiohttp
+discord.py~=1.2.5
+pandas~=0.23.0
+beautifulsoup4~=4.6.0
+pylint~=1.7.3
+aiohttp<3.6.0
