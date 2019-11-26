@@ -8,6 +8,9 @@ import discord
 from discord.ext import commands
 import re
 import datetime
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # star emoji used to update the starboard
 STAR = u"\u2B50"
@@ -210,6 +213,7 @@ class StarboardCog(commands.Cog):
         """
         Reaction removed handler
         """
+        logger.debug("Reaction removed.")
         await self.update_reaction(payload)
 
     @commands.Cog.listener()
@@ -217,6 +221,7 @@ class StarboardCog(commands.Cog):
         """
         Reaction added handler
         """
+        logger.debug("Reaction added.")
         await self.update_reaction(payload)
 
     async def update_reaction(self, payload):

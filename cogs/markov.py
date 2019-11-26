@@ -10,6 +10,8 @@ import configparser
 import datetime
 import numpy as np
 import random
+import logging
+logger = logging.getLogger(__name__)
 
 # trust me, this contains a zero-width space
 zero_width_space = '​'
@@ -76,6 +78,7 @@ class Markov(commands.Cog):
             self.database_path = path
         else:
             print("database path not provided")
+            logger.warn("Markov missing analytics database.")
 
     def get_data(self, guild_id: int, user_id: int = None) -> tuple:
         """
@@ -118,6 +121,7 @@ class Markov(commands.Cog):
         """
         Runs a markov prediction
         """
+        logger.info("Running markov prediction.")
         # for now, just re-build the markov chain each time that this is run
         # unfortunate, but maybe I could do this nightly. data has to be up to date
 

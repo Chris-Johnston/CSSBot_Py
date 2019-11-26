@@ -3,6 +3,9 @@ from discord.ext import commands
 import time
 import aiohttp
 import urllib.parse
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # discord.py calls commands cogs
 # so I'm just going to roll with it
@@ -80,6 +83,7 @@ class BasicCog(commands.Cog):
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command()
     async def ping(self, ctx):
+        logger.debug("Ping command")
         await ctx.send(_test_example())
 
     # echo command
@@ -112,8 +116,10 @@ class BasicCog(commands.Cog):
         if not id or id < 1:
             async with aiohttp.ClientSession() as session:
                 async with session.get('https://c.xkcd.com/random/comic/') as resp:
+                    logger.info(f"XKCD: {resp.url}")
                     await ctx.send(resp.url)
         else:
+            logger.info(f"XKCD: {id}")
             await ctx.send(f'https://xkcd.com/{id}/')
 
     @commands.command(name='lmgtfy')

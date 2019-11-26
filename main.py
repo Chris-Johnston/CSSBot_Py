@@ -17,11 +17,24 @@ import asyncio
 # configuration files
 import configparser
 import sys, traceback
+import logging
+from opencensus.ext.azure.log_exporter import AzureLogHandler
+
+log_format = "%(levelname)s %(filename)s:%(lineno)d %(funcName)s %(message)s"
+logging.basicConfig(format=log_format)  # have to set log level for each logger
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # load configuration to get around hard coded tokens
 config = configparser.ConfigParser()
 with open('config.ini') as config_file:
     config.read_file(config_file)
+
+if config.has_option('Configuration', 'azure_log'):
+    logger.addHandler(AzureLogHandler(
+        connection_string=config["Configuration"]["azure_log"]
+    ))
 
 # startup stuff
 print('discordpy')
@@ -47,17 +60,38 @@ if __name__ == '__main__':
     for extension in default_extensions:
         try:
             client.load_extension(extension)
-            #client.add_cog(extension)
         except Exception as e:
+            logger.error(f"Failed to load extension {extension}.", exc_info=e)
             print(f'Failed to load extension {extension}.', file=sys.stderr)
             traceback.print_exc()
 
 
 @client.event
 async def on_ready():
+    logger.info("Ready event handler")
     # print some stuff when the bot goes online
     print(f'Logged in {client.user.name} - {client.user.id}\nVersion {discord.__version__}')
     await client.change_presence(activity=discord.Game(name='Try >>help'))
+
+@client.event
+async def on_connect():
+    logger.info("Connected.")
+
+@client.event
+async def on_disconnect():
+    logger.warn("Disconnected.")
+
+@client.event
+async def on_error(event):
+    logger.error(f"Event {event} errored.", exc_info=sys.exec_info())
+
+@client.event
+async def on_guild_available(guild):
+    logger.info(f"Guild {guild.id} ({guild.name}) available.")
+
+@client.event
+async def on_guild_unavailable(guild):
+    logger.info(f"Guild {guild.id} ({guild.name}) unavailable.")
 
 # now actually connect the bot
 client.run(config.get(section='Configuration', option='connection_token'),
