@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
 @client.event
 async def on_ready():
-    logger.info("Ready event handler")
+    logger.warn("Ready event handler")
     # print some stuff when the bot goes online
     print(f'Logged in {client.user.name} - {client.user.id}\nVersion {discord.__version__}')
     await client.change_presence(activity=discord.Game(name='Try >>help'))
