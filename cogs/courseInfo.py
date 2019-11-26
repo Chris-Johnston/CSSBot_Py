@@ -8,6 +8,8 @@ from pprint import pprint
 from bs4 import BeautifulSoup # html parser
 import pandas
 import urllib.parse
+import logging
+logger = logging.getLogger(__name__)
 
 # course info module
 
@@ -42,6 +44,7 @@ class CourseInfo(commands.Cog):
                 self.course_data = json.load(course_info)
         else:
             print('no course data file was supplied')
+            logger.warn("No course data file was supplied.")
 
         # set the course descriptions to be empty by default
         self.course_descriptions = {}
@@ -52,6 +55,7 @@ class CourseInfo(commands.Cog):
                 self.course_descriptions = BeautifulSoup(course_description_file, 'html.parser')
         else:
             print('no course description file was supplied')
+            logger.warn("No course description file was supplied.")
 
     # get course data commands
     # course codes must be in the format
@@ -69,6 +73,7 @@ class CourseInfo(commands.Cog):
         if not match:
             await ctx.send(f'I couldn\'t find a class by the code "{course_code}". Try searching again'
                            + f'in the format `CSS 101`. ')
+            logger.warn(f"Failed lookup course code {course_code}.")
             return
         else:
             course_embed.title = f'{match[0]["code"]} Course Information'

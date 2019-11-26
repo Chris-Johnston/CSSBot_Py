@@ -1,5 +1,8 @@
 import discord
 from discord.ext import commands
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # sqlite
 import sqlite3
@@ -35,7 +38,8 @@ class Analytics(commands.Cog):
             # setup the tables of the database
             self._setup_tables(connection)
             connection.close()
-
+        else:
+            logger.warn("Analytics database setting missing, analytics will not be logged.")
 
         # no database specified will mean that the database
         # will be None

@@ -4,3 +4,4 @@ pandas==0.22.0
 beautifulsoup4==4.6.0
 pylint==1.7.3
 aiohttp
+opencensus-ext-azure

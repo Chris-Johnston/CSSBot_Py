@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import re
 import subprocess
+import logging
+logger = logging.getLogger(__name__)
 
 parse_regex = r"^\s*([A-Za-z0-9\_\-]+)(?:(?:\s*\(?)([1-8])\)?)?\s*$"
 lookup_regex = r"^[\/\w+]+\/man\/man([1-8])\/[\w\.]+$"
@@ -102,6 +104,7 @@ class ManPageCog(commands.Cog):
         if parsed:
             await ctx.send(f"https://linux.die.net/man/{parsed[1]}/{parsed[0]}")
         else:
+            logger.warn(f"Failed to parse man command input: {query}.")
             await ctx.send("Couldn't parse that input. Try something like `echo(1)`, or `ping`.")
 
 # add this cog to the bot
