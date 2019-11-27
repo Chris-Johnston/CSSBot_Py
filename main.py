@@ -78,6 +78,10 @@ async def on_connect():
     logger.info("Connected.")
 
 @client.event
+async def on_resumed()
+    logger.warn("Session resumed.")
+
+@client.event
 async def on_disconnect():
     logger.warn("Disconnected.")
 
