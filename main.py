@@ -19,6 +19,7 @@ import configparser
 import sys, traceback
 import logging
 from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure import metrics_exporter
 
 log_format = "%(levelname)s %(filename)s:%(lineno)d %(funcName)s %(message)s"
 logging.basicConfig(format=log_format)  # have to set log level for each logger
@@ -35,6 +36,11 @@ if config.has_option('Configuration', 'azure_log'):
     logger.addHandler(AzureLogHandler(
         connection_string=config["Configuration"]["azure_log"]
     ))
+    # the default metrics exporter will include
+    # stats like memory, CPU, etc
+    exporter = metrics_exporter.new_metrics_exporter(
+        connection_string=config["Configuration"]["azure_log"]    
+    )
 
 # startup stuff
 print('discordpy')
