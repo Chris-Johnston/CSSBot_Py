@@ -35,7 +35,7 @@ def get_members(advent_json: str) -> list:
             if ts == 0:
                 m.last_star_ts = None
             else:
-                m.last_star_ts = datetime.datetime.fromtimestamp(ts)
+                m.last_star_ts = datetime.datetime.utcfromtimestamp(ts)
         else:
             m.last_star_ts = None
         members.append(m)
