@@ -117,7 +117,29 @@ class AdventOfCodeCog(commands.Cog):
         }
         if index in emotes:
             return emotes[index]
-        return " "
+        return ""
+
+    def get_star_for_score(self, score):
+        if score == 50:
+            return "🎄🎄"
+        if score == 0:
+            return ""
+        if score < 5:
+            return "⭐"
+        if score < 10:
+            return "🌟"
+        if score < 20:
+            return "✨"
+        if score == 25:
+            return "🎄"
+        if score <= 30:
+            return "💫"
+        if score <= 35:
+            return "🍪"
+        if score <= 40:
+            return "☃️"
+        if score <= 45:
+            return "🎅"
 
     # @commands.command("advent")
     # @commands.cooldown(3, 900, commands.BucketType.user)
@@ -137,7 +159,7 @@ class AdventOfCodeCog(commands.Cog):
 
         advent_json = self.cache_request()
         members = get_members(advent_json)
-        members.sort(key=lambda x: x.local_score, reverse=True)
+        members.sort(key=lambda x: (-x.stars, x.last_star_ts), reverse=False)
 
         if members is None or len(members) == 0:
             await ctx.send("Failed to get the list of members.")
@@ -146,6 +168,8 @@ class AdventOfCodeCog(commands.Cog):
         leaderboard_embed = discord.Embed()
         total_stars = 0
         description = ""
+        score_rank = -1
+        last_score = 99999
         for idx, val in enumerate(members):
             total_stars += val.stars
             if idx < 20:
@@ -153,8 +177,12 @@ class AdventOfCodeCog(commands.Cog):
                 if val.last_star_ts is not None:
                     date = val.last_star_ts.strftime("%b %d %-I:%M %p")
 
-                emote = self.get_emote_for_index(idx)
-                description += f"{emote} **{val.local_score}** {val.name} **{val.stars}** ⭐ {date}\n"
+                if val.stars < last_score:
+                    score_rank += 1
+                    last_score = val.stars
+                emote = self.get_emote_for_index(score_rank)
+                star = self.get_star_for_score(val.stars)
+                description += f"{emote} **{val.stars}** {star} **{val.name}** {date}\n"
 
         description += f"\n**{len(members)}** users with a total of **{total_stars}** ⭐"
 
