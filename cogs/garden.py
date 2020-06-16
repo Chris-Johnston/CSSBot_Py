@@ -74,7 +74,7 @@ class TinyGarden(commands.Cog):
                 idx += 1
             # fill remaining array with seedlings
             for i in range(idx, 64):
-                garden[idx] = self.filler
+                garden[i] = self.filler
 
             # shuffle and assemble garden
             random.shuffle(garden)
