@@ -57,7 +57,7 @@ class TinyGarden(commands.Cog):
             # add the planti bois
             idx = 0
             # flowers first
-            for i in range(random.randint(16, 24)):
+            for i in range(random.randint(8, 16)):
                 garden[idx] = random.choice(self.flowers)
                 idx += 1
             # then animals
@@ -69,7 +69,7 @@ class TinyGarden(commands.Cog):
                 garden[idx] = random.choice(self.vegetables)
                 idx += 1
             # other green leafy things
-            for i in range(random.randint(5, 15)):
+            for i in range(random.randint(5, 8)):
                 garden[idx] = random.choice(self.plants)
                 idx += 1
             # fill remaining array with seedlings
