@@ -80,7 +80,7 @@ class TinyGarden(commands.Cog):
             random.shuffle(garden)
             for i in range(8):
                 garden[i * 8 + 7] = garden[i * 8 + 7] + '\n'
-            ctx.send(''.join(garden))
+            await ctx.send(''.join(garden))
 
 def setup(bot):
     bot.add_cog(TinyGarden(bot))
