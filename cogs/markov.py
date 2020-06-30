@@ -197,7 +197,7 @@ class Markov(commands.Cog):
         try:
             # loop until we got everything
             for x in range(num_words):
-                w = word_dict[chain[-1]]
+                w = word_dict[f'{chain[-1]}']
                 chain.append(np.random.choice(w))
         except KeyError:
             # ignore this error, just means that a word did not have a next word
