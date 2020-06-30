@@ -1,3 +1,4 @@
+.markov_cache.json
 .idea/*
 *.db
 

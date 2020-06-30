@@ -5,12 +5,16 @@ Commands for mocking user's speech using markov chains
 import discord
 from discord.ext import commands
 
+import json
+import os.path
 import sqlite3
 import configparser
 import datetime
+import time
 import numpy as np
 import random
 import logging
+from typing import Optional
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -118,6 +122,51 @@ class Markov(commands.Cog):
         database.close()
         return words, word_indexes
 
+    def get_word_dict(self, guild_id, user_id):
+        """
+        gets the word dict used for predictions
+        """
+        # get all words in this server from this user (or all users)
+        words, word_indexes = self.get_data(guild_id, user_id)
+        if not words:
+            return "No data found!"
+        # holds list of associated words with each other
+        word_dict = {}
+        for word_1, word_2 in make_word_pairs(word_indexes):
+            if word_1 in word_dict.keys():
+                word_dict[word_1].append(word_2)
+            else:
+                word_dict[word_1] = [word_2]
+        return words, word_indexes, word_dict
+
+    def get_word_dict_cache(self, guild_id, user_id, cache_file = ".markov_cache.json"):
+        """
+        gets the word dict used for predictions from the cache
+        """
+        # read cache file if exists
+        if os.path.isfile(cache_file):
+            with open(cache_file, 'r') as f:
+                cached = json.load(f)
+            if (time.time() < (cached["time"] + 604800)): # 7 days in seconds
+                # cache is in date
+                return cached["words"], cached["word_indexes"], cached["word_dict"]
+        # either cache file missing or out of date
+        words, word_indexes, word_dict = self.get_word_dict(guild_id, user_id)
+
+        # save the cache file
+        out_obj = {
+            "words": words,
+            "word_indexes": word_indexes,
+            "word_dict": word_dict,
+            "time": time.time(),
+        }
+
+        with open(cache_file, 'w') as f:
+            json.dump(out_obj, f)
+
+        return words, word_indexes, word_dict
+
+
     def predict(self, num_words: int, guild_id: int, user_id: int = None, start_word: str = None) -> str:
         """
         Runs a markov prediction
@@ -130,18 +179,8 @@ class Markov(commands.Cog):
         if num_words < 1 or num_words > 50:
             num_words = 20
 
-        # get all words in this server from this user (or all users)
-        words, word_indexes = self.get_data(guild_id, user_id)
-        if not words:
-            return "No data found!"
-        # holds list of associated words with each other
-        word_dict = {}
-        for word_1, word_2 in make_word_pairs(word_indexes):
-            if word_1 in word_dict.keys():
-                word_dict[word_1].append(word_2)
-            else:
-                word_dict[word_1] = [word_2]
-
+        words, word_indexes, word_dict = self.get_word_dict_cache(guild_id, user_id)
+        
         first_word = None
         # get the first word if it exists in the set of existing words already
         if start_word and normalize_word(start_word) in words:
