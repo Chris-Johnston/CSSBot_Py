@@ -61,7 +61,8 @@ default_extensions = ['cogs.basic',
                       'cogs.crob',
                       'cogs.starboard',
                       'cogs.advent',
-                      'cogs.hentai']
+                      'cogs.hentai',
+                      'cogs.garden']
 
 
 if __name__ == '__main__':
