@@ -143,26 +143,30 @@ class Markov(commands.Cog):
         """
         gets the word dict used for predictions from the cache
         """
-        # read cache file if exists
-        if os.path.isfile(cache_file):
-            with open(cache_file, 'r') as f:
-                cached = json.load(f)
-            if (time.time() < (cached["time"] + 604800)): # 7 days in seconds
-                # cache is in date
-                return cached["words"], cached["word_indexes"], cached["word_dict"]
+        # oops, user filter breaks this completely. deal with it later (or never)?
+        if user_id is None:
+            # read cache file if exists
+            if os.path.isfile(cache_file):
+                with open(cache_file, 'r') as f:
+                    cached = json.load(f)
+                if (time.time() < (cached["time"] + 604800)): # 7 days in seconds
+                    # cache is in date
+                    return cached["words"], cached["word_indexes"], cached["word_dict"]
         # either cache file missing or out of date
+        # or if user id is not None, since we cannot cache with the user filter
         words, word_indexes, word_dict = self.get_word_dict(guild_id, user_id)
 
-        # save the cache file
-        out_obj = {
-            "words": words,
-            "word_indexes": word_indexes,
-            "word_dict": word_dict,
-            "time": time.time(),
-        }
+        if user_id is None:
+            # save the cache file
+            out_obj = {
+                "words": words,
+                "word_indexes": word_indexes,
+                "word_dict": word_dict,
+                "time": time.time(),
+            }
 
-        with open(cache_file, 'w') as f:
-            json.dump(out_obj, f)
+            with open(cache_file, 'w') as f:
+                json.dump(out_obj, f)
 
         return words, word_indexes, word_dict
 
