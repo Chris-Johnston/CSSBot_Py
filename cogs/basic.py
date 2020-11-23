@@ -5,6 +5,7 @@ import aiohttp
 import urllib.parse
 import logging
 import requests
+from io import BytesIO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -105,7 +106,7 @@ class BasicCog(commands.Cog):
         message_content = f'<http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}>'
 
         r = requests.get(webcam_url)
-        f = discord.File(r.content)
+        f = discord.File(BytesIO(r.content), filename=f"webcam{time.time()}.jpg")
         await ctx.send(content=message_content, file=f)
         
     @commands.command(name='405')
