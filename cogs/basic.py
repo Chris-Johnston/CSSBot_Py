@@ -107,7 +107,7 @@ class BasicCog(commands.Cog):
 
         r = requests.get(webcam_url)
         f = discord.File(BytesIO(r.content), filename=f"webcam{time.time()}.jpg")
-        await ctx.send(content=message_content, file=f)
+        await ctx.send(file=f)
         
     @commands.command(name='405')
     async def i405(self, ctx):
