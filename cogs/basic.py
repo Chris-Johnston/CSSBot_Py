@@ -4,6 +4,7 @@ import time
 import aiohttp
 import urllib.parse
 import logging
+import requests
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -100,7 +101,12 @@ class BasicCog(commands.Cog):
 
     @commands.command(name='webcam')
     async def webcam(self, ctx):
-        await ctx.send(f'http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}')
+        webcam_url = "http://69.91.192.220/nph-jpeg.cgi"
+        message_content = f'<http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}>'
+
+        r = requests.get(webcam_url)
+        f = discord.File(r.content)
+        await ctx.send(content=message_content, file=f)
         
     @commands.command(name='405')
     async def i405(self, ctx):
