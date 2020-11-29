@@ -81,7 +81,7 @@ class AdventOfCodeCog(commands.Cog):
                               option='advent_guild')
 
     def get_request_url(self) -> str:
-        return f"https://adventofcode.com/2019/leaderboard/private/view/{self.leaderboard_id}.json"
+        return f"https://adventofcode.com/2020/leaderboard/private/view/{self.leaderboard_id}.json"
 
     def request(self):
         """
