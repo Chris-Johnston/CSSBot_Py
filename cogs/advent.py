@@ -96,6 +96,7 @@ class AdventOfCodeCog(commands.Cog):
         return r.json()
 
     def cache_request(self):
+        cache_money = False
         if self.last_request_time is None:
             logger.debug("Advent payload timer not set.")
             self.last_request = self.request()
@@ -106,8 +107,9 @@ class AdventOfCodeCog(commands.Cog):
             self.last_request = self.request()
             self.last_request_time = datetime.datetime.now()
         else:
+            cache_money = True
             logger.debug("Using cached advent payload.")
-        return self.last_request
+        return self.last_request, cache_money
 
     def get_emote_for_index(self, index):
         emotes = {
@@ -157,7 +159,7 @@ class AdventOfCodeCog(commands.Cog):
             logger.debug(f"Guild ID ({guild_id}) did not match the whitelist guild ID ({self.whitelist_guild}).")
             return
 
-        advent_json = self.cache_request()
+        advent_json, is_cached = self.cache_request()
         members = get_members(advent_json)
         members.sort(key=lambda x: (-x.stars, x.last_star_ts), reverse=False)
 
@@ -194,7 +196,8 @@ class AdventOfCodeCog(commands.Cog):
         leaderboard_embed.url = url
         leaderboard_embed.color = discord.Color.dark_green()
 
-        await ctx.send(embed=leaderboard_embed)
+        message_body = "hey btw this data is cached and updates every 15 min" if is_cached else None
+        await ctx.send(message_body, embed=leaderboard_embed)
 
 def setup(bot):
     bot.add_cog(AdventOfCodeCog(bot))
