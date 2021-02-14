@@ -22,7 +22,7 @@ class AroundTheWorldCog(commands.Cog):
         # do not respond to bots (including this one)
         if message.author.bot:
             return
-        if message.channel and isinstance(message.channel, discord.TextChannel) and message.id == around_the_world_channel_id:
+        if message.channel and isinstance(message.channel, discord.TextChannel) and message.channel.id == around_the_world_channel_id:
             if not message.content.lower() == "around the world":
                 logger.info(f"Deleted message {message.id}, did not match 'around the world'")
                 await message.delete()
