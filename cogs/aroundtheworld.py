@@ -19,6 +19,8 @@ class AroundTheWorldCog(commands.Cog):
         """
         Around the world
         """
+        if message.author.id == 85614143951892480: # allow ub3r bot because it is funny
+            return
         if message.channel and isinstance(message.channel, discord.TextChannel) and message.channel.id == around_the_world_channel_id:
             if not "".join(message.content.split()).lower() == "aroundtheworld":
                 logger.info(f"Deleted message {message.id}, did not match 'around the world'")
