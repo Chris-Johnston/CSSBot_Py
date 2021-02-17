@@ -20,7 +20,7 @@ class AroundTheWorldCog(commands.Cog):
         Around the world
         """
         if message.channel and isinstance(message.channel, discord.TextChannel) and message.channel.id == around_the_world_channel_id:
-            if not message.content.lower() == "around the world":
+            if not "".join(message.content.split()).lower() == "aroundtheworld":
                 logger.info(f"Deleted message {message.id}, did not match 'around the world'")
                 await message.delete()
 
