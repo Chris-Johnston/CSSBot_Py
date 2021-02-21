@@ -19,9 +19,14 @@ class AroundTheWorldCog(commands.Cog):
         """
         edit handler, oops
         """
+        if payload.channel_id != around_the_world_channel_id:
+            return
+        logger.debug("on_raw_edit in around the world channel")
         if payload.cached_message is not None:
+            logger.debug(f"edit for cached message: {payload.message_id}")
             await self.on_message(payload.cached_message)
-        else if payload.channel_id == around_the_world_channel_id:
+        else:
+            logger.debug(f"edit for non cached message: {payload.message_id}")
             channel = await self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
 
