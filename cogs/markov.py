@@ -197,11 +197,11 @@ class Markov(commands.Cog):
         try:
             # loop until we got everything
             for x in range(num_words):
-                w = word_dict[f'{chain[-1]}']
+                w = word_dict[chain[-1]]
                 chain.append(np.random.choice(w))
         except KeyError:
             # ignore this error, just means that a word did not have a next word
-            logger.warn(f"markov: could not find next word for chain {' '.join(chain)}")
+            logger.warn(f"markov: could not find next word for chain {chain}")
         if len(chain) == 0:
             return "Didn't get any results."
         # lookup all words from the indexes
