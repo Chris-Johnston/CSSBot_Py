@@ -151,7 +151,9 @@ class Markov(commands.Cog):
                     cached = json.load(f)
                 if (time.time() < (cached["time"] + 604800)): # 7 days in seconds
                     # cache is in date
-                    return cached["words"], cached["word_indexes"], cached["word_dict"]
+                    # make sure keys are ints
+                    word_dict = {int(k): v for k, v in cached["word_dict"].items()}
+                    return cached["words"], cached["word_indexes"], word_dict
         # either cache file missing or out of date
         # or if user id is not None, since we cannot cache with the user filter
         words, word_indexes, word_dict = self.get_word_dict(guild_id, user_id)
