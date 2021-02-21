@@ -201,7 +201,7 @@ class Markov(commands.Cog):
                 chain.append(np.random.choice(w))
         except KeyError:
             # ignore this error, just means that a word did not have a next word
-            pass
+            logger.warn(f"markov: could not find next word for chain {' '.join(chain)}")
         if len(chain) == 0:
             return "Didn't get any results."
         # lookup all words from the indexes
