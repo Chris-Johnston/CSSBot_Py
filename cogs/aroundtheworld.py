@@ -15,6 +15,13 @@ class AroundTheWorldCog(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        """
+        edit handler, oops
+        """
+        self.on_message(after)
+
+    @commands.Cog.listener()
     async def on_message(self, message):
         """
         Around the world
