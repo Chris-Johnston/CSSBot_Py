@@ -19,7 +19,7 @@ class AroundTheWorldCog(commands.Cog):
         """
         edit handler, oops
         """
-        self.on_message(after)
+        await self.on_message(after)
 
     @commands.Cog.listener()
     async def on_message(self, message):
