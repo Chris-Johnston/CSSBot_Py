@@ -15,11 +15,18 @@ class AroundTheWorldCog(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
+    async def on_raw_message_edit(self, payload):
         """
         edit handler, oops
         """
-        await self.on_message(after)
+        if payload.cached_message is not None:
+            await self.on_message(payload.cached_message)
+        else if payload.channel_id == around_the_world_channel_id:
+            channel = await self.bot.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+
+            await self.on_message(message)
+
 
     @commands.Cog.listener()
     async def on_message(self, message):
