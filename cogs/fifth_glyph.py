@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # real channel ID
-# fifth_glyph_channel_id = 820535744035553290
+fifth_glyph_channel_id = 820535744035553290
 
 # testing channel ID
-fifth_glyph_channel_id = 820549897501540424
+# fifth_glyph_channel_id = 820549897501540424
 
 glyphs = ['e', 'E', 'ꗋ', 'æ', 'Æ', 'œ', 'Œ', '€', '£', 'ⱻ', 'Ɇ', 'ɇ', 'Ə', 'ǝ', 'ⱸ', 'Ɛ', 'ℇ', '3']
 
