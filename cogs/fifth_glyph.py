@@ -41,6 +41,19 @@ class FifthGlyphCog(commands.Cog):
                     logger.info(f"Deleted message {message.id}, contained verboten glyph '{g}', contents were '{message.content}'")
                     await message.delete()
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if payload.channel_id != fifth_glyph_channel_id:
+            return
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+
+        for g in glyphs:
+            if (payload.emoji.is_unicode_emoji() and g in emoji.demojize(payload.emoji.name)) or g in payload.emoji.name:
+                logger.debug(f"reaction is being removed for non cached message: {payload.message_id}")
+                await message.clear_reaction(payload.emoji)
+                return
+
 def setup(bot):
     bot.add_cog(FifthGlyphCog(bot))
 
