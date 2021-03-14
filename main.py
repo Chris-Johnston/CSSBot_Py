@@ -63,7 +63,8 @@ default_extensions = ['cogs.basic',
                       'cogs.advent',
                       'cogs.hentai',
                       'cogs.garden',
-                      'cogs.aroundtheworld']
+                      'cogs.aroundtheworld',
+                      'cogs.fifth_glyph']
 
 
 if __name__ == '__main__':
