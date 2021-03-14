@@ -4,6 +4,7 @@ Fifth glyph is bad, ban at all costs.
 import discord
 from discord.ext import commands
 import emoji
+from random import randrange
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -14,7 +15,10 @@ logger.setLevel(logging.DEBUG)
 # testing channel ID
 fifth_glyph_channel_id = 820549897501540424
 
-glyphs = ['e', 'E', 'ꗋ', 'æ', 'Æ', 'œ', 'Œ', '€', '£', 'ⱻ', 'Ɇ', 'ɇ', 'Ə', 'ǝ', 'ⱸ', 'Ɛ', 'ℇ']
+glyphs = ['e', 'E', 'ꗋ', 'æ', 'Æ', 'œ', 'Œ', '€', '£', 'ⱻ', 'Ɇ', 'ɇ', 'Ə', 'ǝ', 'ⱸ', 'Ɛ', 'ℇ', '3']
+
+naughty = ['fuck', 'shit', 'fuckyou', 'fucku']
+responses = ['haha', 'stand down!', 'no', 'no u', ':P', 'huh.', '"it\'s my party and i\'ll cry if i want to"', 'say that 10x fast', 'quit slinging mud you rascal']
 
 class FifthGlyphCog(commands.Cog):
     def __init__(self, bot):
@@ -36,6 +40,9 @@ class FifthGlyphCog(commands.Cog):
         Audaciously cull the fifth glyph
         """
         if message.channel and isinstance(message.channel, discord.TextChannel) and message.channel.id == fifth_glyph_channel_id:
+            if "".join(message.content.split()).lower() in naughty:
+                # sass it up
+                await message.channel.send(responses[randrange(0, len(responses))])
             for g in glyphs:
                 if g in message.content or g in emoji.demojize(message.content) or any([True for a in message.attachments if g in a.filename]):
                     logger.info(f"Deleted message {message.id}, contained verboten glyph '{g}', contents were '{message.content}'")
