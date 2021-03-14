@@ -3,7 +3,7 @@ Fifth glyph is bad, ban at all costs.
 """
 import discord
 from discord.ext import commands
-import re
+import emoji
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -37,7 +37,7 @@ class FifthGlyphCog(commands.Cog):
         """
         if message.channel and isinstance(message.channel, discord.TextChannel) and message.channel.id == fifth_glyph_channel_id:
             for g in glyphs:
-                if g in message.content or any([True for a in message.attachments if g in a.filename]):
+                if g in message.content or g in emoji.demojize(message.content) or any([True for a in message.attachments if g in a.filename]):
                     logger.info(f"Deleted message {message.id}, contained verboten glyph '{g}', contents were '{message.content}'")
                     await message.delete()
 
