@@ -61,7 +61,7 @@ default_extensions = ['cogs.basic',
                       'cogs.crob',
                       'cogs.starboard',
                       'cogs.advent',
-                      'cogs.hentai',
+                      'cogs.drinking_game',
                       'cogs.garden',
                       'cogs.aroundtheworld',
                       'cogs.fifth_glyph']
