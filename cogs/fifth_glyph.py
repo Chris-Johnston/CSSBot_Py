@@ -15,7 +15,7 @@ fifth_glyph_channel_id = 820535744035553290
 # testing channel ID
 # fifth_glyph_channel_id = 820549897501540424
 
-glyphs = ['e', 'E', 'ꗋ', 'æ', 'Æ', 'œ', 'Œ', '€', '£', 'ⱻ', 'Ɇ', 'ɇ', 'Ə', 'ǝ', 'ⱸ', 'Ɛ', 'ℇ', '3']
+glyphs = ['e', 'E', 'ꗋ', 'æ', 'Æ', 'œ', 'Œ', '€', '£', 'ⱻ', 'Ɇ', 'ɇ', 'Ə', 'ǝ', 'ⱸ', 'Ɛ', 'ℇ', '3', '𝔢']
 
 naughty = ['fuck', 'shit', 'fuckyou', 'fucku']
 responses = ['haha', 'stand down!', 'no', 'no u', ':P', 'huh.', '"it\'s my party and i\'ll cry if i want to"', 'say that 10x fast', 'quit slinging mud you rascal']
