@@ -12,6 +12,10 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# sqlite
+import sqlite3
+import configparser
+
 # star emoji used to update the starboard
 STAR = u"\u2B50"
 # require x or more stars to be posted on the starboard
@@ -62,11 +66,99 @@ def merge_unique(a: list, b: list) -> set:
 
 class StarboardCog(commands.Cog):
     def __init__(self, bot):
+        # open the config file in the parent directory
+        config = configparser.ConfigParser()
+        with open('config.ini') as config_file:
+            config.read_file(config_file)
+
         self.bot = bot
-        # dict, key is the message that is being quoted
-        # and the value is the resulting message id of the quote
-        # not necessary to do this backwards, because we can read the content of the starred message to get the id
-        self.star_posts = {}
+
+        self.database_path = None
+
+        # if the database is specified
+        if config.has_option(section='Configuration',
+                             option='starboard_database'):
+            path = config.get(section='Configuration',
+                              option='starboard_database')
+
+            # open the database
+            self.database_path = path
+            connection = sqlite3.connect(path, timeout=15)
+
+            # setup the tables of the database
+            self._setup_tables(connection)
+            connection.close()
+        else:
+            logger.warn("Starboard database setting missing; starboard will use a transient internal dict instead.")
+            self.star_posts = {}
+
+        # No database specified will mean that the database will be None
+
+    def _setup_tables(self, connection):
+        """Set up the tables of the database
+
+        :return:"""
+
+        # connection 'cursor'
+        c = connection.cursor()
+
+        # Singular message table
+        c.execute("""CREATE TABLE IF NOT EXISTS messages
+                    (messageId UNSIGNED BIG INT,
+                     sentMessageId UNSIGNED BIG INT,
+                     channelId UNSIGNED BIG INT)""")
+
+        connection.commit()
+
+    def _get_star_post(self, message_id):
+        """Get information of the starred post if it exists.
+        :param message_id: the id of the starred message
+        :return: either a tuple containing the sent message id, and channel id, or none."""
+        if self.database_path is not None:
+            database_connection = sqlite3.connect(self.database_path)
+            to_query = (message_id,)
+
+            c = database_connection.cursor()
+
+            c.execute("SELECT (sentMessageId, channelId) FROM messages WHERE messageId=?", to_query)
+            result = c.fetchone()
+            database_connection.close()
+            return result
+        elif message_id in self.star_posts:
+            return self.star_posts[message_id]
+        else:
+            return None
+
+    def _insert_star_post(self, message_id, sent_message_id, channel_id):
+        """Remember starboard information for the future.
+        :param message_id: the id of the starred message.
+        :param sent_message_id: the id of the message sent to the starboard channel
+        :param channel_id: the starboard channel's id
+        :return:"""
+        to_insert = (sent_message_id, channel_id)
+
+        if self.database_path is not None:
+            database_connection = sqlite3.connect(self.database_path)
+            c = database_connection.cursor()
+            c.execute("""
+            INSERT OR REPLACE INTO messages VALUES (?, ?, ?)""",
+                      to_insert)
+            database_connection.close()
+        else:
+            self.star_posts[message_id] = to_insert
+
+    def _delete_star_post(self, message_id):
+        """Delete the starboard post from memory.
+        :param message_id: the id of the starred message."""
+        if self.database_path is not None:
+            database_connection = sqlite3.connect(self.database_path)
+            c = database_connection.cursor()
+            c.execute("""
+            DELETE FROM messages WHERE message_id = ?""",
+                      (message_id,))
+            # commit the changes when done
+            database_connection.commit()
+            database_connection.close()
 
     def get_starboard_channel(self, guild_id) -> discord.TextChannel:
         """
@@ -80,7 +172,7 @@ class StarboardCog(commands.Cog):
         guild = self.bot.get_guild(guild_id)
         if guild is None:
             return
-        
+
         # get channel with matching name, if any
         channel_iterator = filter(lambda x: x.name.lower() == "starboard", guild.channels)
         if channel_iterator is None:
@@ -117,7 +209,7 @@ class StarboardCog(commands.Cog):
             if attach and attach.proxy_url:
                 send_embed.set_image(url = attach.proxy_url)
         return send_message, send_embed
-    
+
     async def get_starred_users(self, guild_id, channel_id, message_id) -> list:
         """
         Gets the list of all users who starred the given message.
@@ -133,7 +225,7 @@ class StarboardCog(commands.Cog):
             return []
         star_react = filter(lambda x: x.emoji == STAR, message.reactions)
         if star_react:
-            # need to instead return the set of all 
+            # need to instead return the set of all
             users_iter = next(star_react, None)
             if users_iter:
                 users = await users_iter.users().flatten()
@@ -147,14 +239,16 @@ class StarboardCog(commands.Cog):
         Message id should be for the original post
         """
         original_stars = await self.get_starred_users(guild_id, channel_id, message_id)
-        if message_id in self.star_posts:
+        star_post = self._get_star_post(message_id)
+        if star_post is not None:
+            sent_message_id, _ = star_post
             # need to also get stars from the starboard
-            starboard_stars = await self.get_starred_users(guild_id, starboard_channel_id, self.star_posts[message_id][0])
+            starboard_stars = await self.get_starred_users(guild_id, starboard_channel_id, sent_message_id)
             if starboard_stars:
                 # merge the two lists
                 return len(merge_unique(original_stars, starboard_stars))
         return len(original_stars)
-    
+
     async def update_starboard(self, starboard_channel, guild_id, channel_id, message_id):
         """
         Updates an existing starboard post with a new count of stars.
@@ -175,8 +269,9 @@ class StarboardCog(commands.Cog):
                 # no url, so probably not a legit starboard post, skip
                 return
         else:
-            if message_id in self.star_posts:
-                starboard_message_id, _ = self.star_posts[message_id]
+            star_post = self._get_star_post(message_id)
+            if star_post is not None:
+                starboard_message_id, _ = star_post
                 starboard_message = await starboard_channel.fetch_message(starboard_message_id)
                 if not starboard_message:
                     return # fetched starboard message null
@@ -194,7 +289,7 @@ class StarboardCog(commands.Cog):
         else:
             # under threshold, delete and remove from star posts
             await starboard_message.delete()
-            del self.star_posts[original_message]
+            self._delete_star_post(original_message)
 
     async def post_starboard(self, starboard_channel, guild_id, channel_id, message_id):
         """
@@ -206,7 +301,7 @@ class StarboardCog(commands.Cog):
             if message and embed:
                 sent_message = await starboard_channel.send(content = message, embed = embed)
                 # register this in the dict of messages to their starboard posts
-                self.star_posts[message_id] = (sent_message.id, channel_id)
+                self._insert_star_post(message_id, sent_message.id, channel_id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -233,7 +328,7 @@ class StarboardCog(commands.Cog):
         starboard_channel = self.get_starboard_channel(payload.guild_id)
         if starboard_channel is None:
             return
-        
+
         if payload.channel_id == starboard_channel.id:
             # reaction added to a message in starboard,
             # check that this person hasn't already starred the original message
@@ -242,8 +337,8 @@ class StarboardCog(commands.Cog):
         else:
             # reaction added to a message not in starboard
             # check the number of stars on the message
-            # TODO: set up a proper database for associating starred messages to their resulting post
-            if payload.message_id in self.star_posts:
+            star_post = self._get_star_post(payload.message_id)
+            if star_post is not None:
                 # another reaction was added to the starred message, update the starboard post if the resulting # of stars has changed
                 await self.update_starboard(starboard_channel, payload.guild_id, payload.channel_id, payload.message_id)
             else:
