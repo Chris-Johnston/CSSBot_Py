@@ -5,6 +5,7 @@ import aiohttp
 import urllib.parse
 import logging
 import requests
+import random
 from io import BytesIO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -102,6 +103,10 @@ class BasicCog(commands.Cog):
 
     @commands.command(name='webcam')
     async def webcam(self, ctx):
+        if random.nextint(1, 1000) == 420:
+            await ctx.send("gottem")
+            return
+
         webcam_url = "http://69.91.192.220/nph-jpeg.cgi"
         message_content = f'<http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}>'
 
