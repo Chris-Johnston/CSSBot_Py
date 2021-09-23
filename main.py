@@ -64,7 +64,8 @@ default_extensions = ['cogs.basic',
                       'cogs.drinking_game',
                       'cogs.garden',
                       'cogs.aroundtheworld',
-                      'cogs.fifth_glyph']
+                      'cogs.fifth_glyph',
+                      'cogs.cat']
 
 
 if __name__ == '__main__':
