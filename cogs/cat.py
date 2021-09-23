@@ -32,11 +32,11 @@ class Cat(commands.Cog):
 
         async with ctx.channel.typing():
             q = "?" * random.randrange(1, 6)
-            await ctx.send(f"Did you know{q}")
-            await asyncio.sleep(random.randrange(1, 3))
+            await ctx.send(f"**Did you know{q}**")
+            await asyncio.sleep(random.randrange(5, 10))
             await ctx.send(random.choice(self.cat_facts))
             wow = [ "Wow!", "Me-wow!", "Cool!", "Neat!", "huh", ":)" ]
-            await asyncio.sleep(random.randrange(2, 3))
+            await asyncio.sleep(random.randrange(4, 8))
             await ctx.send(random.choice(wow))
 
 def setup(bot):
