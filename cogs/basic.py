@@ -103,7 +103,7 @@ class BasicCog(commands.Cog):
 
     @commands.command(name='webcam')
     async def webcam(self, ctx):
-        if random.nextint(1, 1000) == 420:
+        if random.randint(1, 1000) == 420:
             await ctx.send("gottem")
             return
 
