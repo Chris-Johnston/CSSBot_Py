@@ -6,6 +6,7 @@ import re
 import asyncio
 import logging
 import requests
+import json
 from typing import List
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -24,7 +25,7 @@ def is_invite_permanent(invite_code: str):
     response = requests.get(url)
 
     # this should? handle expired invites
-    if not response.ok():
+    if not response.ok:
         return False
 
     content = response.json()
@@ -42,7 +43,7 @@ class InviteChecker(commands.Cog):
         self.invite_channels = []
         try:
             if config.has_option(section="Configuration", option="invite_channels"):
-                self.invite_channels = config.get(section="Configuration", option="invite_channels")
+                self.invite_channels = json.loads(config.get(section="Configuration", option="invite_channels"))
         except Exception as e:
             logger.warn(f"Failed to init invite channels {e}")
 
@@ -59,7 +60,7 @@ class InviteChecker(commands.Cog):
                 bad_invites.append(inv)
         
         if len(bad_invites) > 0:
-            msg = f"Hey {message.author.mention}, the invite(s) {' '.join(bad_invites)} are not permanent. Please provide a permanent link."
+            msg = f"Hey {message.author.mention}, the invite(s) [{' '.join(bad_invites)}] aren't permanent or don't work. Please provide a permanent link."
             await message.channel.send(msg)
 
     @commands.Cog.listener()
