@@ -69,7 +69,7 @@ def generate_claps(message: str, emoji: str) -> str:
 def _test_example():
     """
     Example of how to incorporate doctests
-    
+
     >>> _test_example()
     'Pong!'
 
@@ -155,7 +155,7 @@ class BasicCog(commands.Cog):
         """
         encoded = urllib.parse.quote_plus(search)
         await ctx.send(f'Really!? How lazy are you? https://www.google.com/search?q={encoded}')
-    
+
     @commands.command(name=u"clap")
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def clap(self, ctx, emoji, *, message):
@@ -172,12 +172,12 @@ class BasicCog(commands.Cog):
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def clap_skin_tone_1(self, ctx, *, message):
         await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FB"))
-    
+
     @commands.command(name=u"\U0001F44F\U0001F3FC", hidden = True)
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def clap_skin_tone_2(self, ctx, *, message):
         await ctx.send(generate_claps(message, u"\U0001F44F\U0001F3FC"))
-    
+
     @commands.command(name=u"\U0001F44F\U0001F3FD", hidden = True)
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def clap_skin_tone_3(self, ctx, *, message):
