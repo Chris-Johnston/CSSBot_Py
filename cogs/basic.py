@@ -101,7 +101,7 @@ class BasicCog(commands.Cog):
     async def github(self, ctx):
         await ctx.send(f'https://github.com/Chris-Johnston/CSSBot_Py')
 
-    @commands.command(name='webcam')
+    @commands.command(name='webcam', aliases=['gottem'])
     async def webcam(self, ctx):
         if random.randint(1, 1000) == 420:
             await ctx.send("gottem")
@@ -113,10 +113,6 @@ class BasicCog(commands.Cog):
         r = requests.get(webcam_url)
         f = discord.File(BytesIO(r.content), filename=f"webcam{time.time()}.jpg")
         await ctx.send(file=f)
-
-    @commands.command(name='gottem')
-    async def gottem(self, ctx):
-        await self.webcam(ctx)
 
     @commands.command(name='405')
     async def i405(self, ctx):
