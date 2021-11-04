@@ -38,8 +38,10 @@ class DeathToStickers(commands.Cog):
         Inserts a new row into the messages table when a message is sent.
 
         """
+        logger.debug(f"on message, channel id is {message.channel.id}")
         if message.channel.id in self.no_stickers:
             if len(message.stickers) > 0:
+                logger.info(f"deleting message {message.id} in channel {message.channel.id} because it had stickers")
                 # bah-deleted
                 await message.delete()
 
