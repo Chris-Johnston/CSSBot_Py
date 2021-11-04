@@ -40,7 +40,9 @@ class DeathToStickers(commands.Cog):
         """
         logger.debug(f"on message, channel id is {message.channel.id}")
         if message.channel.id in self.no_stickers:
-            if len(message.stickers) > 0:
+            # I think message.stickers in this payload is empty unless I fetch it
+            msg = await message.channel.fetch_message(message.id)
+            if len(msg.stickers) > 0:
                 logger.info(f"deleting message {message.id} in channel {message.channel.id} because it had stickers")
                 # bah-deleted
                 await message.delete()
