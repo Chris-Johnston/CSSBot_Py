@@ -40,7 +40,7 @@ def get_members(advent_json: str) -> list:
             m.last_star_ts = None
         members.append(m)
     return members
-it 
+ 
 class AdventOfCodeCog(commands.Cog):
     """
     Pulls the leaderboard info for the advent of code
