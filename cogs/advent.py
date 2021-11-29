@@ -40,7 +40,7 @@ def get_members(advent_json: str) -> list:
             m.last_star_ts = None
         members.append(m)
     return members
-
+it 
 class AdventOfCodeCog(commands.Cog):
     """
     Pulls the leaderboard info for the advent of code
@@ -81,7 +81,7 @@ class AdventOfCodeCog(commands.Cog):
                               option='advent_guild')
 
     def get_request_url(self) -> str:
-        return f"https://adventofcode.com/2020/leaderboard/private/view/{self.leaderboard_id}.json"
+        return f"https://adventofcode.com/2021/leaderboard/private/view/{self.leaderboard_id}.json"
 
     def request(self):
         """
