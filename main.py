@@ -101,7 +101,7 @@ async def on_disconnect():
     logger.warn("Disconnected.")
 
 @client.event
-async def on_error(event):
+async def on_error(event, *args, **kwargs):
     logger.error(f"Event {event} errored.", exc_info=sys.exec_info())
 
 @client.event

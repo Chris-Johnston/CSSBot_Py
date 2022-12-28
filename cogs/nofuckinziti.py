@@ -41,7 +41,7 @@ class NoFuckinZiti(commands.Cog):
         if message.author.id in self.owners:
             # allowed to use it
             return
-        if self.search_pattern not in message:
+        if self.search_pattern not in message.content:
             return
         try:
             await message.delete()
