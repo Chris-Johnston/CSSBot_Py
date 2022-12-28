@@ -67,7 +67,8 @@ default_extensions = ['cogs.basic',
                       'cogs.fifth_glyph',
                       'cogs.cat',
                       'cogs.invite_checker',
-                      'cogs.death_to_stickers']
+                      'cogs.death_to_stickers',
+                      'cogs.nofuckinziti']
 
 
 if __name__ == '__main__':
