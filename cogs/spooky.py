@@ -57,7 +57,7 @@ class SpookyMonth(commands.Cog):
         
         # keyed by user Id, with a dict for the attributes for each user
         self.state_mutex = asyncio.Lock()
-        asyncio.run(self.read_state)
+        asyncio.run(self.read_state())
 
         with open(spooky_phrases_file, 'rt') as s:
             target_phrases = s.readlines()
