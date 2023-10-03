@@ -310,7 +310,7 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("trade_gt")
     @commands.guild_only()
-    async def trade_gt(self, ctx, amount):
+    async def trade_gt(self, ctx, amount: int):
         """
         Sell an amount of Ghoul Tokens to buy Skele Coin at the current rate.
         """
@@ -326,7 +326,7 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("trade_sc")
     @commands.guild_only()
-    async def trade_sc(self, ctx, amount):
+    async def trade_sc(self, ctx, amount: int):
         """
         Sell an amount of Skele Coin to buy Ghoul Token at the current rate.
         """
