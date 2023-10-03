@@ -8,6 +8,7 @@ import asyncio
 import logging
 import time
 import datetime
+import uuid
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -355,6 +356,26 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-30)
             await ctx.send(f"The secret word is `{self.bonus_phrase}` Have a FRIGHTENING day.")
 
-    
+    @commands.command("buy_art")
+    @commands.guild_only()
+    async def buy_art(self, ctx):
+        """
+        Exchange 5,000 Ghoul Tokens for one-of-a-kind art.
+        """
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        amount = 5000
+        if amount > user.ghoultokens:
+            await ctx.send("You do not have enough GHOUL TOKEN. Come back when you have more.")
+        else:
+            await ctx.send("Wow. I can truly see that you appreciate only the finest of art. I am generating your new one-of-a-kind piece now.")
+            await self.update_user(user_id, delta_ghoultokens=-5000, delta_skelecoin=None)
+
+            nft = str(uuid.uuid4())
+            await ctx.send(f"<@{user_id}>, here is your exclusive and one-of-a-kind art:\n`{nft}`\nYou are now the sole owner of this string of characters forever. Good job.")
+
+
+
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
