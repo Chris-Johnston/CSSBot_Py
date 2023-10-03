@@ -72,14 +72,14 @@ class SpookyMonth(commands.Cog):
     
     # who needs a database, json is MY database
     async def read_state(self):
-        logger.info("reading state from file at time", datetime.datetime.now())
+        logger.info("reading state from file at time")
         try:
             async with self.state_mutex:
                 with open(spooky_state_file, 'rt') as s:
                     self.state = State.from_json(s.read())
             logger.info("done reading state file")
         except Exception as e:
-            logger.warn("could not read state file, initializing empty one", e)
+            logger.warn(f"could not read state file, initializing empty one {e}")
             self.state = State(time.time(), {})
     
     async def write_state(self):
