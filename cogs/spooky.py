@@ -121,7 +121,7 @@ class SpookyMonth(commands.Cog):
             logger.warn("failed to write state for some reason idk", e)
     
     # the good stuff
-    async def update_user(self, user_id, delta_ghoultokens, delta_skelecoin):
+    async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None):
         logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}")
         if user_id in self.state.users:
             # update existing
