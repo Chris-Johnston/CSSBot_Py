@@ -60,7 +60,7 @@ class SpookyMonth(commands.Cog):
         # running an old version of python oh well
 
         loops = asyncio.get_event_loop()
-        loops.run_until_complete(self.read_state)
+        loops.run_until_complete(self.read_state())
         # asyncio.run(self.read_state())
 
         with open(spooky_phrases_file, 'rt') as s:
