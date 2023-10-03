@@ -375,7 +375,14 @@ class SpookyMonth(commands.Cog):
             nft = str(uuid.uuid4())
             await ctx.send(f"<@{user_id}>, here is your exclusive and one-of-a-kind art:\n`{nft}`\nYou are now the sole owner of this string of characters forever. Good job.")
 
-
+    @commands.command("millionaire")
+    @commands.guild_only()
+    async def millionaire(self, ctx):
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+        if user.ghoultokens > 1_000_000:
+            await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
+            await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
