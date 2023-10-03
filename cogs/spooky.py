@@ -198,10 +198,8 @@ class SpookyMonth(commands.Cog):
 
         message = ""
 
-        for person in spooky_ppl:
-            person_id = person[1][0]
-            person_ghoultokens = person[1][1].ghoultokens
-            ctx.guild.get_member
+        for person_id, person_user in spooky_ppl:
+            person_ghoultokens = person_user.ghoultokens
             # display_name = ctx.guild.get_member(person_id).display_name
             # no mentions in embed body?
             display_name = f"<@{person_id}>"
