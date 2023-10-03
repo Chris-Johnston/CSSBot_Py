@@ -95,6 +95,8 @@ class SpookyMonth(commands.Cog):
                     self.state = State.from_json(s.read())
             logger.info("done reading state file")
         except Exception as e:
+            logger.error(e)
+            logger.error(e.with_traceback())
             logger.warn(f"could not read state file, initializing empty one {e}")
             self.state = State(time.time(), {})
             await self.write_state()
