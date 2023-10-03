@@ -96,7 +96,7 @@ class SpookyMonth(commands.Cog):
     # the good stuff
     async def update_user(self, user_id, delta_ghoultokens, delta_skelecoin):
         logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}")
-        if user_id in self.state:
+        if user_id in self.state.users:
             # update existing
             if delta_ghoultokens is not None:
                 self.state.users[user_id].ghoultokens += delta_ghoultokens
@@ -111,7 +111,7 @@ class SpookyMonth(commands.Cog):
     
     async def get_user(self, user_id):
         logger.info(f"get user {user_id}")
-        if user_id in self.state:
+        if user_id in self.state.users:
             return self.state.users[user_id]
         else:
             return User(0, 0)
@@ -159,7 +159,7 @@ class SpookyMonth(commands.Cog):
     @commands.guild_only()
     async def spookyboard(self, ctx):
         # ordered by ghoultokens
-        values = list(enumerate(self.state.items()))
+        values = list(enumerate(self.state.users.items()))
         # values are [ (index, (user_id, User))]
         # user id is x[1][0]
         # user class is x[1][1].ghoultokens
