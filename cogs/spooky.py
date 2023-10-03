@@ -299,6 +299,33 @@ class SpookyMonth(commands.Cog):
                 await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
                 await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
 
+    @commands.command(name="send_skelecoin", aliases=["send_sc", "send_skelecoins"])
+    @commands.guild_only()
+    async def send_skelecoins(self, ctx, recipient: discord.User, amount: int):
+        """
+        Send someone some skele coin
+        """
+        if amount < 0:
+            await ctx.send("If you send me 1,000,000 skele coin I will let you do this. I am serious. (pending code update once it's sent)")
+        elif amount == 0:
+            await ctx.send(":)")
+            await self.update_user(ctx.author.id, delta_skelecoin=-1)
+        elif ctx.author.id == recipient.id:
+            await ctx.send("no.")
+        else:
+            author_id = ctx.author.id
+            user = await self.get_user(author_id)
+            if user.ghoultokens >= amount:
+                await self.update_user(author_id, delta_skelecoin=-amount)
+
+                # fun :)
+                if random.randint(0, 10000) == 123:
+                    amount *= 100000
+
+                # sharing is very scary, so reward this behavior
+                await self.update_user(recipient.id, delta_skelecoin=(amount))
+                await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
+
     @commands.command("stonks")
     @commands.guild_only()
     async def stonks(self, ctx):
