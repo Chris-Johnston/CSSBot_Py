@@ -149,7 +149,7 @@ class SpookyMonth(commands.Cog):
         Checks for the spooky stuff in a message
         """
         if message is not None and message is not None:
-            content = message.content
+            content = message.content.lower()
             # increment once per phrase, not each time in a message
             increment = 0
             if self.bonus_phrase in content:
