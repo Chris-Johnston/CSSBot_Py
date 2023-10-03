@@ -254,21 +254,21 @@ class SpookyMonth(commands.Cog):
             await ctx.send("that's just mean")
 
             # let this go negative, i do not care
-            await self.update_user(ctx.author.id, delta_ghoultokens=-1)
+            await self.update_user(ctx.author.id, delta_ghoultokens=-1, delta_skelecoin=None)
         elif ctx.author.id == recipient.id:
             await ctx.send("no.")
         else:
             author_id = ctx.author.id
             user = await self.get_user(author_id)
             if user.ghoultokens >= amount:
-                await self.update_user(author_id, delta_ghoultokens=-amount)
+                await self.update_user(author_id, delta_ghoultokens=-amount, delta_skelecoin=None)
 
                 # fun :)
                 if random.randint(0, 10000) == 123:
                     amount *= 100
 
                 # sharing is very scary, so reward this behavior
-                await self.update_user(recipient, delta_ghoultokens=(amount + 1))
+                await self.update_user(recipient, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
                 await ctx.sent(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
 
 def setup(bot):
