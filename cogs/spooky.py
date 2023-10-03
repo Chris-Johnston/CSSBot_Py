@@ -171,7 +171,7 @@ class SpookyMonth(commands.Cog):
         Cheat c0deZ to update the ghoultokens for a user
         """
         if ctx.author.id in lazy_admins:
-            self.update_user(user.id, delta_ghoultokens=delta_ghoultokens)
+            await self.update_user(user.id, delta_ghoultokens=delta_ghoultokens)
     
     @commands.command("cheat_skelecoin")
     @commands.guild_only()
@@ -180,7 +180,7 @@ class SpookyMonth(commands.Cog):
         Cheat c0deZ to update the skelecoin for a user
         """
         if ctx.author.id in lazy_admins:
-            self.update_user(user.id, delta_skelecoin=skelecoin)
+            await self.update_user(user.id, delta_skelecoin=skelecoin)
 
     @commands.command("spookyboard")
     @commands.guild_only()
