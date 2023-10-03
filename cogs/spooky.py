@@ -1,3 +1,4 @@
+import math
 import json
 from discord.ext import commands
 import discord
@@ -84,6 +85,23 @@ class SpookyMonth(commands.Cog):
         
         self.bonus_phrase = random.choice(target_phrases)
         logger.info("read the phrases from the spooky phrase file")
+
+        # for cheaters trying to read the source, the stonk
+        # algorithm is y = 1 + 0.15x + 0.5 * sin(A * x) + 0.8 sin(B * x) + 0.1 * sin(C * x) + 2 sin( x / D) + 2 cos (x / E)
+        self.stonk_weight_a = random.randint(1, 10)
+        self.stonk_weight_b = random.randint(1, 10)
+        self.stonk_weight_c = random.randint(1, 10)
+        self.stonk_weight_d = random.randint(1, 10)
+        self.stonk_weight_e = random.randint(1, 10)
+        self.stonk_weight_f = random.randint(10, 20) / 100.0
+    
+    def get_stonk_value(self):
+        # the returned value is the conversion rate between the types of coins
+        # or 1 ghoul token = value skele coins
+        now = datetime.datetime.now()
+        t = 0.0001 + now.hour + now.minute / 60.0
+        value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
+        return max(0.0001, value)
     
     # who needs a database, json is MY database
     async def read_state(self):
@@ -252,6 +270,7 @@ class SpookyMonth(commands.Cog):
             await ctx.send(f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens.")
     
     @commands.command("send_ghoultokens")
+    @commands.guild_only()
     async def send_ghoultokens(self, ctx, recipient: discord.User, amount: int):
         """
         Send someone some ghoul tokens
@@ -279,6 +298,48 @@ class SpookyMonth(commands.Cog):
                 await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
                 await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
 
+    @commands.command("stonks")
+    @commands.guild_only()
+    async def stonks(self, ctx):
+        """
+        View the conversion rate between Ghoul Tokens and Skele Coin.
+        """
+        conversion_rate = self.get_stonk_value()
+        msg = f"The current market conversion rate is:\n1 GHOUL TOKEN = {conversion_rate} SKELE COIN(S)\n1 SKELE COIN = {1 / conversion_rate} GHOUL TOKEN(S)"
+        await ctx.send(msg)
+
+    @commands.command("trade_gt")
+    @commands.guild_only()
+    async def trade_gt(self, ctx, amount):
+        """
+        Sell an amount of Ghoul Tokens to buy Skele Coin at the current rate.
+        """
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if amount > user.ghoultokens:
+            await ctx.send("You do not have enough GHOUL TOKENS.")
+        else:
+            skelecoin = math.floor(amount * self.get_stonk_value())
+            await self.update_user(user_id, delta_ghoultokens=-amount, delta_skelecoin=skelecoin)
+            await ctx.send(f"You sold {amount} GHOUL TOKEN for {skelecoin} SKELE COIN. Have a SPOOKY day.")
+
+    @commands.command("trade_sc")
+    @commands.guild_only()
+    async def trade_sc(self, ctx, amount):
+        """
+        Sell an amount of Skele Coin to buy Ghoul Token at the current rate.
+        """
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if amount > user.skelecoin:
+            await ctx.send("You do not have enough SKELE COIN.")
+        else:
+            ghoultoken = math.floor(amount * (1 / self.get_stonk_value()))
+            await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
+            await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. Have a SCARY day.")
+        
     
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
