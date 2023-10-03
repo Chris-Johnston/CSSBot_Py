@@ -339,7 +339,22 @@ class SpookyMonth(commands.Cog):
             ghoultoken = math.floor(amount * (1 / self.get_stonk_value()))
             await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
             await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. Have a SCARY day.")
-        
+
+    @commands.command("secret")
+    @commands.guild_only()
+    async def secret(self, ctx):
+        """
+        Sell 30 Skele Coin to reveal the secret word.
+        """
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if 30 > user.skelecoin:
+            await ctx.send("You do not have enough SKELE COIN.")
+        else:
+            await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-30)
+            await ctx.send(f"The secret word is `{self.bonus_phrase}` Have a FRIGHTENING day.")
+
     
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
