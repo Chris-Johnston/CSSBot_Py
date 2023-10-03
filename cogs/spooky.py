@@ -275,7 +275,7 @@ class SpookyMonth(commands.Cog):
 
                 # sharing is very scary, so reward this behavior
                 await self.update_user(recipient, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
-                await ctx.sent(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
+                await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
