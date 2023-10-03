@@ -93,6 +93,7 @@ class SpookyMonth(commands.Cog):
                 with open(spooky_state_file, 'rt') as s:
                     # self.state = from_json_actual(s.read())
                     self.state = State.from_json(s.read())
+                    logger.info(f'state is: {self.state}')
             logger.info("done reading state file")
         except Exception as e:
             logger.error(e)
