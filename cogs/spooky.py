@@ -178,11 +178,10 @@ class SpookyMonth(commands.Cog):
     @commands.guild_only()
     async def spookyboard(self, ctx):
         # ordered by ghoultokens
-        values = list(enumerate(self.state.users.items()))
         # values are [ (index, (user_id, User))]
         # user id is x[1][0]
         # user class is x[1][1].ghoultokens
-        spooky_ppl = sorted(values, key=lambda x: x[1][1]['ghoultokens'], reverse=True)[:10]
+        spooky_ppl = sorted(self.state.users.items(), key=lambda x: x[1].ghoultokens, reverse=True)[:10]
 
         leaderboard_embed = discord.Embed()
         leaderboard_embed.title = "Spookyboard"
