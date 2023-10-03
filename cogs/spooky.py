@@ -270,7 +270,7 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send(f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens.")
     
-    @commands.command("send_ghoultokens")
+    @commands.command(name="send_ghoultokens", aliases=["send_gt", "send_ghoultoken"])
     @commands.guild_only()
     async def send_ghoultokens(self, ctx, recipient: discord.User, amount: int):
         """
