@@ -236,6 +236,9 @@ class SpookyMonth(commands.Cog):
     @commands.command("doot")
     @commands.guild_only()
     async def doot(self, ctx):
+        """
+        Doot. (5 ghoul tokens)
+        """
         author_id = ctx.author.id
         user = await self.get_user(author_id)
         if user.ghoultokens > 5:
@@ -276,5 +279,6 @@ class SpookyMonth(commands.Cog):
                 await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
                 await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
 
+    
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
