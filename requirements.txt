@@ -6,3 +6,4 @@ pylint~=1.7.3
 aiohttp>=3.7.4
 opencensus-ext-azure
 emoji
+dataclasses-json
