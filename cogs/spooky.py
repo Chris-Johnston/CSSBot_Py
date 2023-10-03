@@ -99,7 +99,7 @@ class SpookyMonth(commands.Cog):
         # the returned value is the conversion rate between the types of coins
         # or 1 ghoul token = value skele coins
         now = datetime.datetime.now()
-        t = 0.0001 + now.hour + now.minute / 60.0
+        t = 0.0001 + now.day * 24 + now.hour + now.minute / 60.0
         value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
         return max(0.0001, value)
     
