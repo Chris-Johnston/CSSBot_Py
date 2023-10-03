@@ -1,3 +1,4 @@
+import json
 from discord.ext import commands
 import discord
 import configparser
@@ -29,6 +30,21 @@ class State:
     last_updated: int # timestamp
     # keyed by userid, value is User
     users: dict
+
+    def to_json_actual(self):
+        return json.dumps({
+            "last_updated": self.last_updated,
+            # "users": self.users
+            # why does python serialization suck so much
+            "users": User.schema().dump(self.users, many=True)
+        })
+    
+def from_json_actual(jsonstr):
+    j = json.loads(jsonstr)
+    s = State(0, {})
+    s.last_updated = j['last_updated']
+    s.users = User.schema().load(j['users'], many=True)
+    return s
 
 class SpookyMonth(commands.Cog):
     """
@@ -75,7 +91,7 @@ class SpookyMonth(commands.Cog):
         try:
             async with self.state_mutex:
                 with open(spooky_state_file, 'rt') as s:
-                    self.state = State.from_json(s.read())
+                    self.state = from_json_actual(j)
             logger.info("done reading state file")
         except Exception as e:
             logger.warn(f"could not read state file, initializing empty one {e}")
@@ -87,7 +103,7 @@ class SpookyMonth(commands.Cog):
         try:
             async with self.state_mutex:
                 with open(spooky_state_file, 'wt') as s:
-                    json_text = self.state.to_json()
+                    json_text = self.state.to_json_actual()
                     s.write(json_text)
         except Exception as e:
             logger.warn("failed to write state for some reason idk", e)
