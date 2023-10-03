@@ -93,6 +93,14 @@ class SpookyMonth(commands.Cog):
                 with open(spooky_state_file, 'rt') as s:
                     # self.state = from_json_actual(s.read())
                     self.state = State.from_json(s.read())
+
+                    # hack to fix shortcomings in serialization
+                    # why did I even bother with dataclasses
+                    actual_state = {}
+                    for k, v in self.state.users.items():
+                        user_id = int(k)
+                        actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'])
+                    self.state.users = actual_state
                     logger.info(f'state is: {self.state}')
             logger.info("done reading state file")
         except Exception as e:
