@@ -189,11 +189,14 @@ class SpookyMonth(commands.Cog):
         for person in spooky_ppl:
             person_id = person[1][0]
             person_ghoultokens = person[1][1].ghoultokens
-            display_name = ctx.guild.get_member(person_id).display_name
+            ctx.guild.get_member
+            # display_name = ctx.guild.get_member(person_id).display_name
+            # no mentions in embed body?
+            display_name = f"<@{person_id}>"
 
             # escape name
-            zero_width_space = '​'
-            display_name.replace('@', '@' + zero_width_space)
+            # zero_width_space = '​'
+            # display_name.replace('@', '@' + zero_width_space)
 
             # TODO different emoji if I feel like it
             message += f"**{person_ghoultokens}** - {display_name}\n"
