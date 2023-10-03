@@ -17,6 +17,9 @@ spooky_phrases_file = "spooky_phrases.txt"
 spooky_state_file = "spooky_state.json"
 lazy_admins = [163184946742034432, 234840886519791616]
 
+# harcoded because lazy
+spooky_roleid = 1158864060650106990
+
 from dataclasses import dataclass
 # this did not work well for this case, would not recommend
 # from dataclasses_json import dataclass_json
@@ -177,7 +180,15 @@ class SpookyMonth(commands.Cog):
             for x in self.target_phrases:
                 if x in content:
                     increment += 1
-            
+
+            has_role = False
+            for role in message.author.roles:
+                if role.id == spooky_roleid:
+                    has_role = True
+                    break
+            # double points
+            increment = increment * 2
+
             user_id = message.author.id
             # would all these writes cause slowdown, idk, idc
             await self.update_user(user_id, increment, None)
@@ -410,6 +421,25 @@ class SpookyMonth(commands.Cog):
         if user.ghoultokens > 1_000_000:
             await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
+
+    @commands.command("spook")
+    @commands.guild_only()
+    async def spook_user(self, ctx, target_user):
+        """
+        Scare a user! Ahh! (Costs a random number of SKELE COIN)
+        """
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if user.skelecoin > 0:
+            cost = random.randint(0, 200)
+            await ctx.send(f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n@<{target_user.id}> has been spooked by @<{user_id}>!")
+            await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-cost)
+
+            # if they already have the role too bad should have noticed
+            await target_user.add_roles(spooky_roleid)
+        else:
+            await ctx.send("Come back again when you have some SKELE COIN")
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
