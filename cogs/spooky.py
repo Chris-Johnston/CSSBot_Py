@@ -81,6 +81,7 @@ class SpookyMonth(commands.Cog):
         except Exception as e:
             logger.warn(f"could not read state file, initializing empty one {e}")
             self.state = State(time.time(), {})
+            await self.write_state()
     
     async def write_state(self):
         logger.info("updating state")
