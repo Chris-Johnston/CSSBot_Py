@@ -99,20 +99,20 @@ class SpookyMonth(commands.Cog):
         if user_id in self.state:
             # update existing
             if delta_ghoultokens is not None:
-                self.state[user_id].ghoultokens += delta_ghoultokens
+                self.state.users[user_id].ghoultokens += delta_ghoultokens
             if delta_skelecoin is not None:
-                self.state[user_id].skelecoin += delta_skelecoin
+                self.state.users[user_id].skelecoin += delta_skelecoin
         else:
             # new user
             logger.info(f"new user user_id {user_id}")
-            self.state[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0)
+            self.state.users[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0)
         
         await self.write_state()
     
     async def get_user(self, user_id):
         logger.info(f"get user {user_id}")
         if user_id in self.state:
-            return self.state[user_id]
+            return self.state.users[user_id]
         else:
             return User(0, 0)
 
