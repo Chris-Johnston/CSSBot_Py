@@ -173,7 +173,7 @@ class SpookyMonth(commands.Cog):
         for person in spooky_ppl:
             person_id = person[1][0]
             person_ghoultokens = person[1][1].ghoultokens
-            display_name = ctx.message.server.get_member(person_id).display_name
+            display_name = ctx.guild.get_member(person_id).display_name
 
             # escape name
             zero_width_space = '​'
