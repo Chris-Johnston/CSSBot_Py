@@ -20,7 +20,7 @@ from dataclasses_json import dataclass_json
 @dataclass_json
 @dataclass
 class User:
-    display_name: string
+    display_name: str
     ghoultokens: int
     skelecoin: int
 
