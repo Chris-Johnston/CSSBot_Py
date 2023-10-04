@@ -93,6 +93,7 @@ class BasicCog(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.command(name='echo')
     async def echo(self, ctx, *, message='_echo_'):
+        message = sanitize_ping(message)
         await ctx.send(f'{ctx.author.mention} : {message}')
 
     # github command
