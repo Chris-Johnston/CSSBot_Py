@@ -424,7 +424,7 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("spook")
     @commands.guild_only()
-    async def spook_user(self, ctx, target_user):
+    async def spook_user(self, ctx, target_user: discord.User):
         """
         Scare a user! Ahh! (Costs a random number of SKELE COIN)
         """
