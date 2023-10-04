@@ -435,6 +435,10 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         user = await self.get_user(user_id)
 
+        if user_id == target_user.id:
+            await ctx.send("You can't spook yourself")
+            return
+
         if user.skelecoin > 0:
             cost = random.randint(0, 200)
             await ctx.send(f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n<@{target_user.id}> has been spooked by <@{user_id}>!")
@@ -444,6 +448,34 @@ class SpookyMonth(commands.Cog):
             await target_user.add_roles(spooky_roleid)
         else:
             await ctx.send("Come back again when you have some SKELE COIN")
+
+    @commands.command("market_manipulation")
+    @commands.guild_only()
+    async def market_manipulation(self, ctx):
+        """
+        Manipulates the market. (Costs 50 SKELE COIN, Spooky users only)
+        """
+        user_id = ctx.author.id
+        is_spooky = spooky_roleid in ctx.author.roles
+        user = await self.get_user(user_id)
+
+        if not(is_spooky):
+            await ctx.send("You must be spooky for this")
+            return
+        
+        if user.skelecoin >= 50:
+            await self.update_user(user_id, delta_skelecoin=-50)
+
+            self.stonk_weight_a = random.randint(1, 10)
+            self.stonk_weight_b = random.randint(1, 10)
+            self.stonk_weight_c = random.randint(1, 10)
+            self.stonk_weight_d = random.randint(1, 10)
+            self.stonk_weight_e = random.randint(1, 10)
+            self.stonk_weight_f = -random.randint(10, 20) / 100.0
+
+            await ctx.send("The market variables have been randomized for now. This may or may not have done anything. Good job?")
+        else:
+            await ctx.send("You don't have enough SKELE COIN for this")
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
