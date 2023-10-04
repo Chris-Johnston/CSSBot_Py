@@ -433,7 +433,7 @@ class SpookyMonth(commands.Cog):
 
         if user.skelecoin > 0:
             cost = random.randint(0, 200)
-            await ctx.send(f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n@<{target_user.id}> has been spooked by @<{user_id}>!")
+            await ctx.send(f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n<@{target_user.id}> has been spooked by <@{user_id}>!")
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-cost)
 
             # if they already have the role too bad should have noticed
