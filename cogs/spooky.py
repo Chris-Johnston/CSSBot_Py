@@ -190,7 +190,8 @@ class SpookyMonth(commands.Cog):
                     has_role = True
                     break
             # double points
-            increment = increment * 2
+            if has_role:
+                increment = increment * 2
 
             user_id = message.author.id
             # would all these writes cause slowdown, idk, idc
