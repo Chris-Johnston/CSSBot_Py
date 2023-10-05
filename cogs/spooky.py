@@ -15,7 +15,7 @@ logger.setLevel(logging.DEBUG)
 # hardcoding files because I am lazy and I do not care
 spooky_phrases_file = "spooky_phrases.txt"
 spooky_state_file = "spooky_state.json"
-lazy_admins = [163184946742034432, 234840886519791616]
+lazy_admins = [163184946742034432, 234840886519791616, 236960229370232835]
 
 # harcoded because lazy
 spooky_roleid = 1158864060650106990
