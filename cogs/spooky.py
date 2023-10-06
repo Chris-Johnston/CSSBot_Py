@@ -51,6 +51,12 @@ class State(JSONWizard):
 #     s.users = User.schema().load(j['users'], many=True)
 #     return s
 
+def is_user_spooky(user):
+    for role in user.roles:
+        if role.id == spooky_roleid:
+            return True
+    return False
+
 class SpookyMonth(commands.Cog):
     """
     SpooOOOOooOOOoookyyyyyy!
@@ -184,11 +190,7 @@ class SpookyMonth(commands.Cog):
                 if x in content:
                     increment += 1
 
-            has_role = False
-            for role in message.author.roles:
-                if role.id == spooky_roleid:
-                    has_role = True
-                    break
+            has_role = is_user_spooky(message.author)
             # double points
             if has_role:
                 increment = increment * 2
@@ -456,12 +458,13 @@ class SpookyMonth(commands.Cog):
         Manipulates the market. (Costs 50 SKELE COIN, Spooky users only)
         """
         user_id = ctx.author.id
-        is_spooky = spooky_roleid in ctx.author.roles
-        user = await self.get_user(user_id)
+        is_spooky = is_user_spooky(ctx.author)
 
         if not(is_spooky):
             await ctx.send("You must be spooky for this")
             return
+        
+        user = await self.get_user(user_id)
         
         if user.skelecoin >= 50:
             await self.update_user(user_id, delta_skelecoin=-50)
