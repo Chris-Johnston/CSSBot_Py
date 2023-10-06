@@ -400,6 +400,9 @@ class SpookyMonth(commands.Cog):
         """
         Sell an amount of Ghoul Tokens to buy Skele Coin at the current rate.
         """
+        if amount < -2:
+            return
+
         user_id = ctx.author.id
         user = await self.get_user(user_id)
 
@@ -416,6 +419,9 @@ class SpookyMonth(commands.Cog):
         """
         Sell an amount of Skele Coin to buy Ghoul Token at the current rate.
         """
+        if amount < -2:
+            return
+
         user_id = ctx.author.id
         user = await self.get_user(user_id)
 
@@ -589,7 +595,7 @@ class SpookyMonth(commands.Cog):
             await ctx.send(f"Prest-o! Change-o! Here's your new nickname. In case it got truncated it was: `{new_nickname}` {get_sendoff()}")
         else:
             await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
-        
+
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
