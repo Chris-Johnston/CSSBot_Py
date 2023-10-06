@@ -479,6 +479,17 @@ class SpookyMonth(commands.Cog):
             await ctx.send("The market variables have been randomized for now. This may or may not have done anything. Good job?")
         else:
             await ctx.send("You don't have enough SKELE COIN for this")
+    
+    @commands.command("this_does_nothing")
+    @commands.guild_only()
+    async def this_does_nothing(self, ctx):
+        """
+        This command does nothing, but can only be used by spooky people.
+        """
+        is_spooky = is_user_spooky(ctx.author)
+        if not is_spooky:
+            await self.update_user(ctx.author.id, delta_skelecoin=-1)
+            ctx.send("This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. Have a BONE-CHILLING day.")
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
