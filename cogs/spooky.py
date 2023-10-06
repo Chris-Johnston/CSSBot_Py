@@ -492,7 +492,7 @@ class SpookyMonth(commands.Cog):
             await self.update_user(ctx.author.id, delta_skelecoin=-1)
             await ctx.send("This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. Have a BONE-CHILLING day.")
 
-    @commands.command(name="trade_gc", aliases="trade_st")
+    @commands.command(name="trade_gc", aliases=["trade_st"])
     @commands.guild_only()
     async def you_fool(self, ctx):
         await self.update_user(ctx.author.id, delta_skelecoin=-1)
