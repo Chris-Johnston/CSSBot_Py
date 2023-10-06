@@ -447,7 +447,8 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-cost)
 
             # if they already have the role too bad should have noticed
-            await target_user.add_roles(spooky_roleid)
+            spooky_role = ctx.guild.get_role(spooky_roleid)
+            await target_user.add_roles(spooky_role)
         else:
             await ctx.send("Come back again when you have some SKELE COIN")
 
