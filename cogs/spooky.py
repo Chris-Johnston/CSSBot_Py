@@ -428,6 +428,15 @@ class SpookyMonth(commands.Cog):
             await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
 
+    async def billionaire(self, ctx):
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+        if user.skelecoin > 1_000_000_000:
+            await ctx.send("cool, now start over.")
+            await self.update_user(user_id, delta_ghoultokens=-user.ghoultokens, delta_skelecoin=-user.skelecoin)
+        else:
+            await ctx.send("😤😤😤 The 👀 grind 🎯💰 never 😎 stops 💪 😤😤. Keep up the grind!")
+
     @commands.command("spook")
     @commands.guild_only()
     async def spook_user(self, ctx, target_user: discord.User):
