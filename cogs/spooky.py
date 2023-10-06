@@ -586,7 +586,7 @@ class SpookyMonth(commands.Cog):
             await ctx.send(f"This command only works if your number of GHOUL TOKEN is not a multiple of THREE. {get_sendoff()}")
             return
         
-        if math.abs(user.skelecoin) >= 100:
+        if abs(user.skelecoin) >= 100:
             await self.update_user(user_id, delta_skelecoin=-10)
 
             current_nickname = ctx.author.display_name
