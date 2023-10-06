@@ -68,6 +68,10 @@ class Markov(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        if datetime.datetime.now().month == 10:
+            # this code sucks too much to allow it to run during the Spooky Month
+            return
+
         # get the path to the database
         config = configparser.ConfigParser()
         with open('config.ini') as config_file:
