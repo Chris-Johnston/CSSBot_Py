@@ -15,6 +15,7 @@ logger.setLevel(logging.DEBUG)
 # hardcoding files because I am lazy and I do not care
 spooky_phrases_file = "spooky_phrases.txt"
 spooky_state_file = "spooky_state.json"
+spooky_nicknames = "spooky_names.txt"
 lazy_admins = [163184946742034432, 234840886519791616]
 
 # harcoded because lazy
@@ -56,6 +57,37 @@ def is_user_spooky(user):
         if role.id == spooky_roleid:
             return True
     return False
+
+def escape(self, text):
+    zero_width_space = '​'
+    text.replace('@', '@' + zero_width_space)
+    return text
+
+def get_sendoff():
+    adjectives = [
+        # lazy weight
+        "SCARY",
+        "SCARY",
+        "SCARY",
+        "SCARY",
+        "SCARY",
+        "SCARY",
+        "CREEPY",
+        "FRIGHTENING",
+        "PUMPKIN",
+        "DAY",
+        "",
+        "OCTOBER",
+        "GHOULISH",
+        "SKELETAL",
+        "GHOST-LIKE",
+        "ZOMBIE-TASTIC",
+        "SPOOKY",
+        "BONE-CHILLING",
+        "TRANSACTIONAL",
+        "${ADJECTIVE}"
+    ]
+    return f"Have a {random.choice(adjectives)} day!"
 
 class SpookyMonth(commands.Cog):
     """
@@ -104,6 +136,11 @@ class SpookyMonth(commands.Cog):
         self.stonk_weight_d = random.randint(1, 10)
         self.stonk_weight_e = random.randint(1, 10)
         self.stonk_weight_f = -random.randint(10, 20) / 100.0
+
+        logger.info("reading names from file")
+        with open(spooky_nicknames, 'rt') as n:
+            self.nickname_fmt_strings = n.read().splitlines()
+        
     
     def get_stonk_value(self):
         # the returned value is the conversion rate between the types of coins
@@ -285,7 +322,7 @@ class SpookyMonth(commands.Cog):
 
             await ctx.send("doot https://www.youtube.com/watch?v=eVrYbKBrI7o")
         else:
-            await ctx.send(f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens.")
+            await ctx.send(f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens. {get_sendoff()}")
     
     @commands.command(name="send_ghoultokens", aliases=["send_gt", "send_ghoultoken"])
     @commands.guild_only()
@@ -314,7 +351,7 @@ class SpookyMonth(commands.Cog):
 
                 # sharing is very scary, so reward this behavior
                 await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
-                await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
+                await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
     @commands.command(name="send_skelecoin", aliases=["send_sc", "send_skelecoins"])
     @commands.guild_only()
@@ -323,7 +360,7 @@ class SpookyMonth(commands.Cog):
         Send someone some skele coin
         """
         if amount < 0:
-            await ctx.send("If you send me 1,000,000 skele coin I will let you do this. I am serious. (pending code update once it's sent)")
+            await ctx.send("If you send me 5,000,001 skele coin I will let you do this. Once. I am serious.")
         elif amount == 0:
             await ctx.send(":)")
             await self.update_user(ctx.author.id, delta_skelecoin=-1)
@@ -341,7 +378,7 @@ class SpookyMonth(commands.Cog):
 
                 # sharing is very scary, so reward this behavior
                 await self.update_user(recipient.id, delta_skelecoin=(amount))
-                await ctx.send(f"TRANSFER COMPLETE. HAVE A SPOOKY DAY.")
+                await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
     @commands.command("stonks")
     @commands.guild_only()
@@ -349,6 +386,10 @@ class SpookyMonth(commands.Cog):
         """
         View the conversion rate between Ghoul Tokens and Skele Coin.
         """
+        if random.randint(0, 1000) == 10:
+            await ctx.send("# BOO!")
+            return
+
         conversion_rate = self.get_stonk_value()
         msg = f"The current market conversion rate is:\n1 GHOUL TOKEN = {conversion_rate} SKELE COIN(S)\n1 SKELE COIN = {1 / conversion_rate} GHOUL TOKEN(S)"
         await ctx.send(msg)
@@ -383,7 +424,7 @@ class SpookyMonth(commands.Cog):
         else:
             ghoultoken = math.floor(amount * (1 / self.get_stonk_value()))
             await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
-            await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. Have a SCARY day.")
+            await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}")
 
     @commands.command("secret")
     @commands.guild_only()
@@ -398,7 +439,7 @@ class SpookyMonth(commands.Cog):
             await ctx.send("You do not have enough SKELE COIN.")
         else:
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-30)
-            await ctx.send(f"The secret word is `{self.bonus_phrase}` Have a FRIGHTENING day.")
+            await ctx.send(f"The secret word is `{self.bonus_phrase}`. {get_sendoff()}")
 
     @commands.command("buy_art")
     @commands.guild_only()
@@ -411,13 +452,13 @@ class SpookyMonth(commands.Cog):
 
         amount = 5000
         if amount > user.ghoultokens:
-            await ctx.send("You do not have enough GHOUL TOKEN. Come back when you have more.")
+            await ctx.send(f"You do not have enough GHOUL TOKEN. Come back when you have more. {get_sendoff()}")
         else:
-            await ctx.send("Wow. I can truly see that you appreciate only the finest of art. I am generating your new one-of-a-kind piece now.")
+            await ctx.send(f"Wow. I can truly see that you appreciate only the finest of art. I am generating your new one-of-a-kind piece now. {get_sendoff()}")
             await self.update_user(user_id, delta_ghoultokens=-5000, delta_skelecoin=None)
 
             nft = str(uuid.uuid4())
-            await ctx.send(f"<@{user_id}>, here is your exclusive and one-of-a-kind art:\n`{nft}`\nYou are now the sole owner of this string of characters forever. Good job.")
+            await ctx.send(f"<@{user_id}>, here is your exclusive and one-of-a-kind art:\n`{nft}`\nYou are now the sole owner of this string of characters forever. Good job. {get_sendoff()}")
 
     @commands.command("millionaire")
     @commands.guild_only()
@@ -459,7 +500,7 @@ class SpookyMonth(commands.Cog):
             spooky_role = ctx.guild.get_role(spooky_roleid)
             await target_user.add_roles(spooky_role)
         else:
-            await ctx.send("Come back again when you have some SKELE COIN")
+            await ctx.send(f"Come back again when you have some SKELE COIN. {get_sendoff()}")
 
     @commands.command("market_manipulation")
     @commands.guild_only()
@@ -471,7 +512,7 @@ class SpookyMonth(commands.Cog):
         is_spooky = is_user_spooky(ctx.author)
 
         if not(is_spooky):
-            await ctx.send("You must be spooky for this")
+            await ctx.send(f"YOU. {get_sendoff()} MUST. {get_sendoff()} BE. {get_sendoff()} SPOOKY. {get_sendoff()}")
             return
         
         user = await self.get_user(user_id)
@@ -488,7 +529,7 @@ class SpookyMonth(commands.Cog):
 
             await ctx.send("The market variables have been randomized for now. This may or may not have done anything. Good job?")
         else:
-            await ctx.send("You don't have enough SKELE COIN for this")
+            await ctx.send("You don't have enough SKELE COIN for this.")
     
     @commands.command("this_does_nothing")
     @commands.guild_only()
@@ -499,22 +540,56 @@ class SpookyMonth(commands.Cog):
         is_spooky = is_user_spooky(ctx.author)
         if not is_spooky:
             await self.update_user(ctx.author.id, delta_skelecoin=-1)
-            await ctx.send("This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. Have a BONE-CHILLING day.")
+            await ctx.send(f"This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. {get_sendoff()}")
 
     @commands.command(name="trade_gc", aliases=["trade_st"])
     @commands.guild_only()
     async def you_fool(self, ctx):
         await self.update_user(ctx.author.id, delta_skelecoin=-1)
-        await ctx.send("You fool, it's GHOUL TOKEN and SKELE COIN, not SKELE TOKEN and GHOUL COIN. I have subtracted 1 SKELE COIN from your account. Have a ${ADJECTIVE} day.")
+        await ctx.send(f"You fool, it's GHOUL TOKEN and SKELE COIN, not SKELE TOKEN and GHOUL COIN. I have subtracted 1 SKELE COIN from your account. {get_sendoff()}")
 
     @commands.command(name="helphelphelphelphelphelphelphelphelphelphelp")
     @commands.guild_only()
     async def helphelphelphelphelphelphelphelphelphelphelp(self, ctx):
         is_spooky = is_user_spooky(ctx.author)
         if is_spooky:
-            await ctx.send("N̶̛͚̹̣͔̾̂̒̋̋̈́̇́̓̓͜͠͝ͅǪ̴̛̭̬͙̫̀̓̄̃̉̓́̿̏̐̋̅̌̑B̵̲̈̉͛̕͝O̵͙̰̮̼͍̫͑̄̄̀D̸̢͈̤̜̺͎͕̤̭̰̻͗̏̽̓͗͂͐̋̀̓͆̚͝ͅỲ̶͉̾̿͋́́̽͘ ̷̛̛͎̝̂̿̓̉̾́̆́̇C̸͚͕͕͑Ą̵̧̛̳̮͈̯̹̙͌̈́̈́̇͒̎̀͂͜N̷̨̨͔͍̖̯͍̫͖̦̝̽̾̐ ̸̨̢̛͍̲̟̠̬̮̞͕̭͐́̈́͒͆̈́̏͛͘H̵̛̬͓̲͙̾̍̏̿̎̆͋̽̕͘͜͠͝É̵̗̖̫̆̆̃̎̅̾͑̓̈́͊̅̀̕ͅL̴̝͈̾̿̔͒̔̅̆̈͊͐P̷̡̡̬͎̠̻͙̦̗̗̞͗́̽̓̉̃͑̀͒̈́͗ͅ ̷̢̯̝̞͉̹̬̎̐Ý̴̡̡̹̬̯̹̣̗̪̳̪̾̈͜Ọ̴̣͕͚̰͚̀̀͊̿̓͆̅̆̾͛͆͘͠U̸͖̽̊ ̸̛̞͍̺͕̱̯̜̠̺͓͆͛̔͋͋̓͋̿͆͛̉̍͜͠ͅN̸͙̜̆̓Ơ̸̬͕̮̹̝͕̤̻̯̩̣̜̏̿͗̀̔̀͜͝ͅW̷̖̱̻̻̮̬̤͈̰̜̌̓̅͘ͅ")
+            await ctx.send("N̶̛͚̹̣͔̾̂̒̋̋̈́̇́̓̓͜͠͝ͅǪ̴̛̭̬͙̫̀̓̄̃̉̓́̿̏̐̋̅̌̑B̵̲̈̉͛̕͝O̵͙̰̮̼͍̫͑̄̄̀D̸̢͈̤̜̺͎͕̤̭̰̻͗̏̽̓͗͂͐̋̀̓͆̚͝ͅỲ̶͉̾̿͋́́̽͘ ̷̛̛͎̝̂̿̓̉̾́̆́̇C̸͚͕͕͑Ą̵̧̛̳̮͈̯̹̙͌̈́̈́̇͒̎̀͂͜N̷̨̨͔͍̖̯͍̫͖̦̝̽̾̐ ̸̨̢̛͍̲̟̠̬̮̞͕̭͐́̈́͒͆̈́̏͛͘H̵̛̬͓̲͙̾̍̏̿̎̆͋̽̕͘͜͠͝É̵̗̖̫̆̆̃̎̅̾͑̓̈́͊̅̀̕ͅL̴̝͈̾̿̔͒̔̅̆̈͊͐P̷̡̡̬͎̠̻͙̦̗̗̞͗́̽̓̉̃͑̀͒̈́͗ͅ ̷̢̯̝̞͉̹̬̎̐Ý̴̡̡̹̬̯̹̣̗̪̳̪̾̈͜Ọ̴̣͕͚̰͚̀̀͊̿̓͆̅̆̾͛͆͘͠U̸͖̽̊ ̸̛̞͍̺͕̱̯̜̠̺͓͆͛̔͋͋̓͋̿͆͛̉̍͜͠ͅN̸͙̜̆̓Ơ̸̬͕̮̹̝͕̤̻̯̩̣̜̏̿͗̀̔̀͜͝ͅW̷̖̱̻̻̮̬̤͈̰̜̌̓̅͘ͅ" + " " + get_sendoff())
         else:
             await ctx.send("Oops! Looks like you made a typo. You meant `>>help`.")
+
+    @commands.command("nickname")
+    @commands.guild_only()
+    async def nickname(self, ctx):
+        """
+        Transmogrifies your nickname into something SCARY. (Spooky users only.)
+        """
+        user_id = ctx.author.id
+        is_spooky = is_user_spooky(ctx.author)
+        if not is_spooky:
+            await ctx.send(f"Spooky users only. Come back when you are SPOOKY. {get_sendoff()}")
+            return
+
+        user = await self.get_user(user_id)
+        if user.skelecoin > 1000:
+            await ctx.send(f"You actually have too much SKELE COIN to use this command. Come back when you have less SKELE COIN. {get_sendoff()}")
+            return
+        
+        if user.ghoultokens % 3 == 0:
+            await ctx.send(f"This command only works if your number of GHOUL TOKEN is not a multiple of THREE. {get_sendoff()}")
+            return
+        
+        if math.abs(user.skelecoin) >= 100:
+            await self.update_user(user_id, delta_skelecoin=-10)
+
+            current_nickname = ctx.author.display_name
+            fmt_str = random.choice(self.nickname_fmt_strings)
+            new_nickname = fmt_str.format(current_nickname)
+            new_nickname = escape(new_nickname)
+            await ctx.author.edit(nick=new_nickname)
+            await ctx.send(f"Prest-o! Change-o! Here's your new nickname. In case it got truncated it was: `{new_nickname}` {get_sendoff()}")
+        else:
+            await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
+        
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
