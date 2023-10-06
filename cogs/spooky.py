@@ -490,7 +490,13 @@ class SpookyMonth(commands.Cog):
         is_spooky = is_user_spooky(ctx.author)
         if not is_spooky:
             await self.update_user(ctx.author.id, delta_skelecoin=-1)
-            ctx.send("This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. Have a BONE-CHILLING day.")
+            await ctx.send("This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. Have a BONE-CHILLING day.")
+
+    @commands.command(name="trade_gc", aliases="trade_st")
+    @commands.guild_only()
+    async def you_fool(self, ctx):
+        await self.update_user(ctx.author.id, delta_skelecoin=-1)
+        await ctx.send("You fool, it's GHOUL TOKEN and SKELE COIN, not SKELE TOKEN and GHOUL COIN. I have subtracted 1 SKELE COIN from your account. Have a ${ADJECTIVE} day.")
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
