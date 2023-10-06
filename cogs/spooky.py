@@ -58,7 +58,7 @@ def is_user_spooky(user):
             return True
     return False
 
-def escape(self, text):
+def escape(text):
     zero_width_space = '​'
     text.replace('@', '@' + zero_width_space)
     return text
