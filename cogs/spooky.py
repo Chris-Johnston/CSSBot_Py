@@ -475,6 +475,8 @@ class SpookyMonth(commands.Cog):
             await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
 
+    @commands.commmancommand("billionaire")
+    @commands.guild_only()
     async def billionaire(self, ctx):
         user_id = ctx.author.id
         user = await self.get_user(user_id)
