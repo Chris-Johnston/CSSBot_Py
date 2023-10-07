@@ -282,6 +282,9 @@ class SpookyMonth(commands.Cog):
             # zero_width_space = '​'
             # display_name.replace('@', '@' + zero_width_space)
 
+            if person_ghoultokens >= 1_000_000:
+                message += "😎 "
+
             # TODO different emoji if I feel like it
             message += f"**{person_ghoultokens}** - {display_name}\n"
         
