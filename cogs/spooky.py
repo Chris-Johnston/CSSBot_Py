@@ -30,6 +30,7 @@ from dataclass_wizard import JSONWizard
 class User(JSONWizard):
     ghoultokens: int
     skelecoin: int
+    prestige: int
 
 @dataclass
 class State(JSONWizard):
@@ -166,7 +167,7 @@ class SpookyMonth(commands.Cog):
                     actual_state = {}
                     for k, v in self.state.users.items():
                         user_id = int(k)
-                        actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'])
+                        actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'], v['prestige'] if 'prestige' in v else 0)
                     self.state.users = actual_state
                     logger.info(f'state is: {self.state}')
             logger.info("done reading state file")
@@ -188,20 +189,26 @@ class SpookyMonth(commands.Cog):
             logger.warn("failed to write state for some reason idk", e)
     
     # the good stuff
-    async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None):
-        logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}")
+    async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None, prestige=None):
+        logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin} prestige {prestige}")
         if user_id in self.state.users:
             # update existing
             if delta_ghoultokens is not None:
                 self.state.users[user_id].ghoultokens += delta_ghoultokens
             if delta_skelecoin is not None:
                 self.state.users[user_id].skelecoin += delta_skelecoin
+            if prestige is not None:
+                self.state.users[user_id].prestige = prestige
         else:
             # new user
             logger.info(f"new user user_id {user_id}")
-            self.state.users[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0)
+            self.state.users[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0, 0)
         
         await self.write_state()
+
+    async def reset_prestige(self, user_id):
+        current_user = self.get_user(user_id)
+        await self.update_user(user_id, delta_ghoultokens=-current_user.ghoultokens, delta_skelecoin=-current_user.skelecoin, prestige=(current_user.prestige + 1))
     
     async def get_user(self, user_id):
         logger.info(f"get user {user_id}")
@@ -282,6 +289,9 @@ class SpookyMonth(commands.Cog):
             # zero_width_space = '​'
             # display_name.replace('@', '@' + zero_width_space)
 
+            if person_user.prestige > 0:
+                message += "⭐" * person_user.prestige
+
             if person_ghoultokens >= 1_000_000:
                 message += "😎 "
 
@@ -352,6 +362,7 @@ class SpookyMonth(commands.Cog):
 
                 # fun :)
                 if random.randint(0, 10000) == 123:
+                    await ctx.send(":)")
                     amount *= 100
 
                 # sharing is very scary, so reward this behavior
@@ -379,6 +390,7 @@ class SpookyMonth(commands.Cog):
 
                 # fun :)
                 if random.randint(0, 10000) == 123:
+                    await ctx.send(":)")
                     amount *= 100000
 
                 # sharing is very scary, so reward this behavior
@@ -477,19 +489,37 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         user = await self.get_user(user_id)
         if user.ghoultokens > 1_000_000:
-            await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
-            await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
+            await ctx.send(f"Wow good job ur a millionaire. The bank is all out of SKELE COIN though. {get_sendoff()}")
+            # await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
+            # await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
 
     @commands.command("billionaire")
     @commands.guild_only()
     async def billionaire(self, ctx):
+        """
+        Increases your prestige level. (Requires 1 billion GHOUL TOKEN and SKELE COIN).
+        """
         user_id = ctx.author.id
         user = await self.get_user(user_id)
-        if user.skelecoin > 1_000_000_000:
+        if user.skelecoin > 1_000_000_000 and user.ghoultokens > 1_000_000_000:
             await ctx.send("cool, now start over.")
-            await self.update_user(user_id, delta_ghoultokens=-user.ghoultokens, delta_skelecoin=-user.skelecoin)
+            # await self.update_user(user_id, delta_ghoultokens=-user.ghoultokens, delta_skelecoin=-user.skelecoin)
+            await self.reset_prestige(user_id)
         else:
-            await ctx.send("😤😤😤 The 👀 grind 🎯💰 never 😎 stops 💪 😤😤. Keep up the grind!")
+            await ctx.send(f"Only {user.skelecoin - 1_000_000_000} SKELE COIN and {user.ghoultokens - 1_000_000_000} to go!")
+    
+    @commands.command("prestige")
+    @commands.guild_only()
+    async def prestige(self, ctx):
+        """
+        Checks your prestige level.
+        """
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+        if user.prestige == 0:
+            await ctx.send("You do not have any prestige levels.")
+        else:
+            await ctx.send(f"Prestige level: {'⭐' * user.prestige}, please go outside")
 
     @commands.command("spook")
     @commands.guild_only()
