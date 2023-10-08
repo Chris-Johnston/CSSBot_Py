@@ -207,7 +207,7 @@ class SpookyMonth(commands.Cog):
         await self.write_state()
 
     async def reset_prestige(self, user_id):
-        current_user = self.get_user(user_id)
+        current_user = await self.get_user(user_id)
         await self.update_user(user_id, delta_ghoultokens=-current_user.ghoultokens, delta_skelecoin=-current_user.skelecoin, prestige=(current_user.prestige + 1))
     
     async def get_user(self, user_id):
@@ -502,7 +502,7 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         user = await self.get_user(user_id)
         if user.skelecoin > 1_000_000_000 and user.ghoultokens > 1_000_000_000:
-            await ctx.send("cool, now start over.")
+            await ctx.send("cool, now start over. your prestige has been reset")
             # await self.update_user(user_id, delta_ghoultokens=-user.ghoultokens, delta_skelecoin=-user.skelecoin)
             await self.reset_prestige(user_id)
         else:
@@ -653,15 +653,15 @@ class SpookyMonth(commands.Cog):
         
         if random.randint(0, 10) == 1:
             await ctx.send("WINNER")
-            delta_gt = user.ghoultokens * 1.5
-            delta_sc = user.skelecoin * 1.5
+            delta_gt = math.floor(user.ghoultokens * 1.5)
+            delta_sc = math.floor(user.skelecoin * 1.5)
 
             await self.update_user(user_id, delta_ghoultokens=delta_gt, delta_skelecoin=delta_sc)
         else:
-            await ctx.send("Spooky!")
+            await ctx.send("Spooky! You lost.")
 
-            delta_gt = user.ghoultokens * -0.9
-            delta_sc = user.skelecoin * -0.9
+            delta_gt = math.floor(user.ghoultokens * -0.9)
+            delta_sc = math.floor(user.skelecoin * -0.9)
 
             await self.update_user(user_id, delta_ghoultokens=delta_gt, delta_skelecoin=delta_sc)
         
