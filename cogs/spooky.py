@@ -246,7 +246,7 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, increment, None)
     
     # cheat commands
-    @commands.command("cheat_ghoultokens")
+    @commands.command("cheat_ghoultoken", aliases=["cheat_gt", "cheat_ghoultokens"])
     @commands.guild_only()
     async def cheat_ghoultokens(self, ctx, user: discord.User, delta_ghoultokens: int):
         """
@@ -255,7 +255,7 @@ class SpookyMonth(commands.Cog):
         if ctx.author.id in lazy_admins:
             await self.update_user(user.id, delta_ghoultokens=delta_ghoultokens)
     
-    @commands.command("cheat_skelecoin")
+    @commands.command("cheat_skelecoin", aliases=["cheat_sc", "cheat_skelecoinss"])
     @commands.guild_only()
     async def cheat_skelecoin(self, ctx, user: discord.User, skelecoin: int):
         """
