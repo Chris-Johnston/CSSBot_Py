@@ -633,6 +633,39 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
 
+    @commands.command("yolo")
+    @commands.guild_only()
+    async def yolo(self, ctx):
+        """
+        Spooky users only.
+        """
+        user_id = ctx.author.id
+        is_spooky = is_user_spooky(ctx.author)
+        if not is_spooky:
+            await ctx.send(f"Gotta be SPOOKY first. {get_sendoff()}")
+            return
+    
+        user = await self.get_user(user_id)
+
+        if user.skelecoin < 100 and user.ghoultokens < 100:
+            await ctx.send("gotta have more SKELE COIN and GHOUL TOKEN")
+            return
+        
+        if random.randint(0, 10) == 1:
+            await ctx.send("WINNER")
+            delta_gt = user.ghoultokens * 1.5
+            delta_sc = user.skelecoin * 1.5
+
+            await self.update_user(user_id, delta_ghoultokens=delta_gt, delta_skelecoin=delta_sc)
+        else:
+            await ctx.send("Spooky!")
+
+            delta_gt = user.ghoultokens * -0.9
+            delta_sc = user.skelecoin * -0.9
+
+            await self.update_user(user_id, delta_ghoultokens=delta_gt, delta_skelecoin=delta_sc)
+        
+
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
