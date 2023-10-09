@@ -471,7 +471,7 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
             await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}")
 
-    @commands.command("secret")
+    @commands.command("secret_word")
     @commands.guild_only()
     async def secret(self, ctx):
         """
@@ -688,11 +688,11 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, delta_ghoultokens=delta_gt, delta_skelecoin=delta_sc)
 
     def has_user_id_already_unlocked(self, user_id):
-        a_user = self.spooky_unlocks['a'] if 'a' in self.spooky_unlocks else 0
-        b_user = self.spooky_unlocks['b'] if 'b' in self.spooky_unlocks else 0
-        c_user = self.spooky_unlocks['c'] if 'c' in self.spooky_unlocks else 0
-        d_user = self.spooky_unlocks['d'] if 'd' in self.spooky_unlocks else 0
-        e_user = self.spooky_unlocks['e'] if 'e' in self.spooky_unlocks else 0
+        a_user = self.spooky_unlocks['A'] if 'A' in self.spooky_unlocks else 0
+        b_user = self.spooky_unlocks['B'] if 'B' in self.spooky_unlocks else 0
+        c_user = self.spooky_unlocks['C'] if 'C' in self.spooky_unlocks else 0
+        d_user = self.spooky_unlocks['D'] if 'D' in self.spooky_unlocks else 0
+        e_user = self.spooky_unlocks['E'] if 'E' in self.spooky_unlocks else 0
 
         return user_id in [a_user, b_user, c_user, d_user, e_user]
 
