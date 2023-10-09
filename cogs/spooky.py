@@ -147,12 +147,12 @@ class SpookyMonth(commands.Cog):
         self.secret_file_mutex = asyncio.Lock()
 
         with open(spooky_secret, 'rt') as secrets:
-            self.spooky_secret = json.loads(secrets)
+            self.spooky_secret = json.loads(secrets.read())
         logger.info("loaded the spooky secret file")
 
         # initialize to empty file too lazy to create if not exists
         with open(spooky_secret_unlocks, 'rt') as secret_unlocks:
-            self.spooky_unlocks = json.loads(secret_unlocks)
+            self.spooky_unlocks = json.loads(secret_unlocks.read())
         logger.info("loaded the unlocks file")
     
     async def write_spooky_unlocks(self):
