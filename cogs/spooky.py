@@ -16,6 +16,8 @@ logger.setLevel(logging.DEBUG)
 spooky_phrases_file = "spooky_phrases.txt"
 spooky_state_file = "spooky_state.json"
 spooky_nicknames = "spooky_names.txt"
+spooky_secret = "spooky_secret.json"
+spooky_secret_unlocks = "spooky_secret_unlocks.json"
 lazy_admins = [163184946742034432, 234840886519791616]
 
 # harcoded because lazy
@@ -141,7 +143,27 @@ class SpookyMonth(commands.Cog):
         logger.info("reading names from file")
         with open(spooky_nicknames, 'rt') as n:
             self.nickname_fmt_strings = n.read().splitlines()
-        
+
+        self.secret_file_mutex = asyncio.Lock()
+
+        with open(spooky_secret, 'rt') as secrets:
+            self.spooky_secret = json.loads(secrets)
+        logger.info("loaded the spooky secret file")
+
+        # initialize to empty file too lazy to create if not exists
+        with open(spooky_secret_unlocks, 'rt') as secret_unlocks:
+            self.spooky_unlocks = json.loads(secret_unlocks)
+        logger.info("loaded the unlocks file")
+    
+    async def write_spooky_unlocks(self):
+        # shouldn't have to read given it happens on startup
+        try:
+            async with self.secret_file_mutex:
+                unlocks = json.dumps(self.spooky_unlocks)
+                with open(spooky_secret_unlocks, 'wt') as su:
+                    su.write(unlocks)
+        except Exception as e:
+            logger.error(e)
     
     def get_stonk_value(self):
         # the returned value is the conversion rate between the types of coins
@@ -664,7 +686,52 @@ class SpookyMonth(commands.Cog):
             delta_sc = math.floor(user.skelecoin * -0.9)
 
             await self.update_user(user_id, delta_ghoultokens=delta_gt, delta_skelecoin=delta_sc)
+
+    def has_user_id_already_unlocked(self, user_id):
+        a_user = self.spooky_unlocks['a'] if 'a' in self.spooky_unlocks else 0
+        b_user = self.spooky_unlocks['b'] if 'b' in self.spooky_unlocks else 0
+        c_user = self.spooky_unlocks['c'] if 'c' in self.spooky_unlocks else 0
+        d_user = self.spooky_unlocks['d'] if 'd' in self.spooky_unlocks else 0
+        e_user = self.spooky_unlocks['e'] if 'e' in self.spooky_unlocks else 0
+
+        return user_id in [a_user, b_user, c_user, d_user, e_user]
+
+    @commands.command("unlock_secret")
+    @commands.guild_only()
+    async def unlock_secret(self, ctx, secret_letter: str):
+        """
+        Unlocks a secret. (Must have 1 or more PRESTIGE LEVEL and be SPOOKY.)
+
+        Only one secret can be unlocked per person. Secret letter is A-E.
+        """
+        user_id = ctx.author.id
+
+        if not secret_letter in ['A', 'B', 'C', 'D', 'E']:
+            await ctx.send(f"Secret letter is between `A-E`. {get_sendoff()}")
+            return
         
+        if self.has_user_id_already_unlocked(user_id):
+            await ctx.send(f"You have already unlocked a secret. Try helping others unlock a secret too. {get_sendoff()}")
+            return
+        
+        if not is_user_spooky(ctx.author):
+            await ctx.send(f"You are not SPOOKY enough. {get_sendoff()}")
+            return
+
+        user = await self.get_user(user_id)
+        if user.prestige == 0:
+            await ctx.send(f"You must have at least 1 PRESTIGE LEVEL. {get_sendoff()}")
+            return
+        
+        if secret_letter in self.spooky_unlocks:
+            await ctx.send(f"The secret {secret_letter} has already been unlocked. {get_sendoff()}")
+            return
+        
+        # unlock the gosh darn thing
+        self.spooky_unlocks[secret_letter] = user_id
+        await self.write_spooky_unlocks()
+        the_actual_secret = self.spooky_secret[secret_letter]
+        await ctx.send(f"You have unlocked the secret {secret_letter}. Pay attention, I will only say this ONCE.\n`{the_actual_secret}`\n{get_sendoff()}")
 
 
 def setup(bot):
