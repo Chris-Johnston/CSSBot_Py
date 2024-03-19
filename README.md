@@ -2,6 +2,8 @@
 [![Build Status](https://travis-ci.org/Chris-Johnston/CSSBot_Py.svg?branch=master)](https://travis-ci.org/Chris-Johnston/CSSBot_Py)
 A bot for the CSS discord server, written in Python 3.6 using [discord.py](https://github.com/Rapptz/discord.py).
 
+This project is not actively maintained, and is updated on an ad-hoc basis.
+
 See also [CSSBot](https://github.com/Chris-Johnston/CSSBot), same idea just in C#.
 
 # Installation / Setup / Usage
@@ -52,8 +54,8 @@ Version 1.0.0a
 
 # Contributing
 
-Feel free to add whatever changes in a pull request. Feature requests should be added under Issues.
-All changes will be discussed before they are committed to the main branch.
+This project is only intended for a specific Discord server, for a specific set of users.
+Before requesting new suggestions or implementing anything new, please discuss the change there before creating an Issue or Pull Request on GitHub.
 
 ## Reference Material
 
