@@ -64,6 +64,7 @@ class NoFreakinTutors(commands.Cog):
             owner = inv.inviter.id
             self.invite_links[invite_id] = f"{uses},{owner}"
 
+    # this does not seem to fire ever
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
         logger.info("guild invite create")
@@ -110,9 +111,16 @@ class NoFreakinTutors(commands.Cog):
                     self.invite_source[f"{owner}"] = invite_id
                     self.update_tracking_file()
             else:
-                # new id?
-                probably_used_invite_id = invite_id
-                logger.warn("new invite id outta nowhere?")
+                # new invite which did not exist before
+                if uses > 0:
+                    logger.warn(f"probably joined from a new to me invite {invite_id}")
+                    probably_used_invite_id = invite_id
+
+                    self.invite_source[f"{owner}"] = invite_id
+                    self.update_tracking_file()
+
+                # this is now known
+                self.invite_links[invite_id] = val
         
         logger.info(f"user {joined_id} joined, probably from invite id {probably_used_invite_id}")
 
