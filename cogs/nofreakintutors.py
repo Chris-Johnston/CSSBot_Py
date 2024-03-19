@@ -38,6 +38,8 @@ class NoFreakinTutors(commands.Cog):
                     # dictionary where key is user id, value is invite link, both
                     # are strings
                     self.invite_source = json.loads(f.read())
+
+                    logger.warn(f"opened invite source file, len = {len(self.invite_source)}")
             except Exception as e:
                 logger.warn(f"Failed to open invite tracking json file {e}")
 
