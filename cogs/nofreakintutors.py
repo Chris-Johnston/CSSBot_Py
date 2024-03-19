@@ -29,7 +29,7 @@ class NoFreakinTutors(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        if os.path.exists(invite_filename):
+        if not os.path.exists(invite_filename):
             logger.warn("invite tracking json doesn't exist, creating it")
             self.invite_source = {}
         else:
