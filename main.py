@@ -46,7 +46,12 @@ if config.has_option('Configuration', 'azure_log'):
 print('discordpy')
 print(discord.__version__)
 
-client = commands.Bot(command_prefix='>>', description='https://github.com/Chris-Johnston/CssBot-Py', case_insensitive=True)
+intents = discord.Intents.all()
+# intents.invites = True
+
+logger.info(f"intents: {intents} invites? {intents.invites}")
+
+client = commands.Bot(command_prefix='>>', description='https://github.com/Chris-Johnston/CssBot-Py', case_insensitive=True, intents=intents)
 
 # this is where extensions are added by default
 default_extensions = ['cogs.basic',
