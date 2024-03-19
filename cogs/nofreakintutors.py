@@ -66,7 +66,12 @@ class NoFreakinTutors(commands.Cog):
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
-        if invite.guild is None or invite.guild.id != target_guild:
+        logger.info("guild invite create")
+        if invite.guild is None:
+            logger.info("guild is none")
+            return
+        if invite.guild.id != target_guild:
+            logger.info("wrong guild")
             return
         
         invite_id = invite.id
