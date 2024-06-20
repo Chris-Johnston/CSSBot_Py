@@ -42,6 +42,8 @@ class Poke(commands.Cog):
         src_user_id = ctx.author.id
         dst_user_id = user.id
 
+        logger.info(f"Poke {ctx.author} -> {user}")
+
         # new state in case src user has not done this yet
         src_user_poke_state = PokeState()
         src_user_poke_state.poke_timers = {}
@@ -56,12 +58,14 @@ class Poke(commands.Cog):
 
                 if poke_timestamp > (datetime.datetime.now() - datetime.timedelta(days=1)):
                     # too frequent
+                    logger.debug(f"Poke {ctx.author} -> {user} was too frequent, last was at {poke_timestamp}")
                     await ctx.send("You've already done that in the last 24 hours.")
 
             # src usr has sent at least one poke
             src_user_poke_state = self.poke_state[src_user_id]
 
         # poke!
+        logger.debug(f"Poke {ctx.author} -> {user} poked!")
         await user.send(f"{ctx.author.display_name} poked you!")
         await ctx.send("👉")
 
