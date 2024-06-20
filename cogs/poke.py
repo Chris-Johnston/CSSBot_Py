@@ -49,11 +49,11 @@ class Poke(commands.Cog):
 
         # check to see if they have done this too recently
         if src_user_id in self.poke_state:
-            if dst_user_id in self.poke_state[src_user_id]:
+            if dst_user_id in self.poke_state[src_user_id].poke_timers:
                 # going to let cssbot py just restart every day
                 # as it currently does, and so this will just reset at 4 am
                 # every day
-                poke_timestamp = self.poke_state[src_user_id]
+                poke_timestamp = self.poke_state[src_user_id].poke_timers[dst_user_id]
 
                 if poke_timestamp > (datetime.datetime.now() - datetime.timedelta(days=1)):
                     # too frequent
