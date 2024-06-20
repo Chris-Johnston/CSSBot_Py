@@ -65,8 +65,14 @@ class Poke(commands.Cog):
 
         # poke!
         logger.debug(f"Poke {ctx.author} -> {user} poked!")
-        await user.send(f"{ctx.author.display_name} poked you!")
-        await ctx.send("👉")
+        try:
+            user_dm = self.bot.get_user(dst_user_id)
+            await user_dm.send(f"{ctx.author.display_name} poked you!")
+            await ctx.send("👉")
+        except Exception as e:
+            logger.warn(f"Poke didn't work: {e}")
+            await ctx.send("Didn't work, user probably doesn't have DMs open to the bot.")
+            return
 
         # this probably has a race condition, I do not care.
         src_user_poke_state.poke_timers[dst_user_id] = datetime.datetime.now()
