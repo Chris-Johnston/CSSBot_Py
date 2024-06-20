@@ -45,8 +45,7 @@ class Poke(commands.Cog):
         logger.info(f"Poke {ctx.author} -> {user}")
 
         # new state in case src user has not done this yet
-        src_user_poke_state = PokeState()
-        src_user_poke_state.poke_timers = {}
+        src_user_poke_state = PokeState(poke_timers={})
 
         # check to see if they have done this too recently
         if src_user_id in self.poke_state:
