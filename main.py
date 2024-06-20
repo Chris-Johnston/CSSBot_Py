@@ -75,6 +75,7 @@ default_extensions = ['cogs.basic',
                       'cogs.death_to_stickers',
                       'cogs.nofuckinziti',
                       'cogs.nofreakintutors',
+                      'cogs.poke',
                       # 'cogs.spooky']
                       ]
 
