@@ -55,13 +55,13 @@ client = commands.Bot(command_prefix='>>', description='https://github.com/Chris
 
 # this is where extensions are added by default
 default_extensions = ['cogs.basic',
-                      'cogs.courseInfo',
+                      # 'cogs.courseInfo', # doesn't work anymore
                       'cogs.number_utils',
                       'cogs.hardware_utils',
                       'cogs.analytics',
                       'cogs.gpa',
                       'cogs.manpage',
-                      'cogs.markov',
+                      # 'cogs.markov', # nobody uses this anymore
                       'cogs.hyphen',
                       'cogs.crob',
                       'cogs.starboard',
