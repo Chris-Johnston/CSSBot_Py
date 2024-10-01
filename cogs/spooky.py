@@ -422,7 +422,7 @@ class SpookyMonth(commands.Cog):
         msg = f"The current market conversion rate is:\n1 GHOUL TOKEN = {conversion_rate} SKELE COIN(S)\n1 SKELE COIN = {1 / conversion_rate} GHOUL TOKEN(S)"
         await ctx.send(msg)
 
-    @commands.command("stonks", hidden=True)
+    @commands.command("stonkchart", hidden=True)
     @commands.guild_only()
     async def stonkcharts(self, ctx):
         """
