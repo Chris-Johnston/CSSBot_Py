@@ -516,19 +516,19 @@ class SpookyMonth(commands.Cog):
     @commands.guild_only()
     async def market_manipulation(self, ctx):
         """
-        Manipulates the market. (Costs 50 SKELE COIN, Spooky users only)
+        Manipulates the market. (Costs 50000 SKELE COIN, Spooky users only)
         """
         user_id = ctx.author.id
         is_spooky = is_user_spooky(ctx.author)
 
         if not(is_spooky):
-            await ctx.send(f"YOU. {get_sendoff()} MUST. {get_sendoff()} BE. {get_sendoff()} SPOOKY. {get_sendoff()}")
+            await ctx.send(f"Nah, not spooky enough 4 me")
             return
         
         user = await self.get_user(user_id)
         
-        if user.skelecoin >= 50:
-            await self.update_user(user_id, delta_skelecoin=-50)
+        if user.skelecoin >= 50000:
+            await self.update_user(user_id, delta_skelecoin=-50000)
 
             self.stonk_weight_a = random.randint(1, 10)
             self.stonk_weight_b = random.randint(1, 10)
