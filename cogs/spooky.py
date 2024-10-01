@@ -438,6 +438,8 @@ class SpookyMonth(commands.Cog):
         
         await self.update_user(user_id, delta_skelecoin=-50)
 
+        self.generate_image()
+
         f = discord.File(open('spookystonks.png', 'rb'))
 
         await ctx.send("hey so this code was really annoying to write and it's still not good so I'm charging you 50 SKELE COIN. No refunds.", file=f)
