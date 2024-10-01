@@ -423,6 +423,7 @@ class SpookyMonth(commands.Cog):
         await ctx.send(msg)
 
     @commands.command("stonkchart", hidden=True)
+    @commands.cooldown(3, 60, commands.BucketType.guild)
     @commands.guild_only()
     async def stonkcharts(self, ctx):
         """
