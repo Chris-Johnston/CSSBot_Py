@@ -89,6 +89,26 @@ def get_sendoff():
     ]
     return f"Have a {random.choice(adjectives)} day!"
 
+def get_emoji_by_tokens(value: int):
+    if value < 10:
+        return ""
+    if value < 100:
+        return "💀"
+    if value < 500:
+        return "☠️"
+    if value < 1000:
+        return "🎃"
+    if value < 2000:
+        return "🕷️"
+    if value < 5000:
+        return "⚰️"
+    if value < 10000:
+        return "🐈‍⬛"
+    if value < 1_000_000_000:
+        return "💰"
+    return ""
+
+
 class SpookyMonth(commands.Cog):
     """
     SpooOOOOooOOOoookyyyyyy!
@@ -271,6 +291,8 @@ class SpookyMonth(commands.Cog):
 
         leaderboard_embed = discord.Embed()
         leaderboard_embed.title = "Spookyboard"
+        if random.randint(0, 100) == 1:
+            leaderboard_embed.title = "S̸̡̡̛̟̝̮͙̈́̈́̌̏̍̈́́͝C̷̨̢̝̝̼̮̦̗̺̻̦̥͈͎̪̃͊́̇̚ͅÃ̴̡̳̠̥̯͎̭̱̼̣̉̎́̋̀ͅŘ̴̢̢̜͍̩͔̗͉̖̼͍̥͚̋̽͑̔̑̈́̐̋Ỷ̸͕̬͔̪͎̬̊̉̈́̈́̈́͛̋́̉̈́̓͝͠ͅB̵̢̟̩̳̰̦̙͔̭͍̫̝͓̹͒O̶͉̣̤̯̾̊̽͛̌̿̄͗̐̃̌̄̕Ȃ̴̢̰̬͔͉͙̲̹͙̱͈̆̍̕Ŗ̷̧̥̠͖̜̰̤͕̥͇̦̗̗͚͎̔͛͋͗̄̌̄̋̓̊̈́̒͆̊̚͘͜D̶̡̳͍͐̈́̊̑̕͘̚"
         leaderboard_embed.color = discord.Color.orange()
 
         message = ""
@@ -286,7 +308,8 @@ class SpookyMonth(commands.Cog):
             # display_name.replace('@', '@' + zero_width_space)
 
             # TODO different emoji if I feel like it
-            message += f"**{person_ghoultokens}** - {display_name}\n"
+            emoji = get_emoji_by_tokens(person_ghoultokens)
+            message += f"{emoji} **{person_ghoultokens}** - {display_name}\n"
         
         leaderboard_embed.description = message
         await ctx.send("", embed=leaderboard_embed)
