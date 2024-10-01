@@ -422,6 +422,95 @@ class SpookyMonth(commands.Cog):
         msg = f"The current market conversion rate is:\n1 GHOUL TOKEN = {conversion_rate} SKELE COIN(S)\n1 SKELE COIN = {1 / conversion_rate} GHOUL TOKEN(S)"
         await ctx.send(msg)
 
+    @commands.command("stonks", hidden=True)
+    @commands.guild_only()
+    async def stonkcharts(self, ctx):
+        """
+        (COSTS 50 SKELE COIN) View Ghoul Token / Skele-Coin conversion rate as a graph.
+        """
+
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if user.skelecoin < 50:
+            await ctx.send("You do not have enough SKELE COIN.")
+            return
+        
+        await self.update_user(user_id, delta_skelecoin=-50)
+
+        f = discord.File(open('spookychart.png', 'rb'))
+
+        await ctx.send("hey so this code was really annoying to write and it's still not good so I'm charging you 50 SKELE COIN. No refunds.", file=f)
+
+    def get_value(self, time: datetime.datetime):
+        # the returned value is the conversion rate between the types of coins
+        # or 1 ghoul token = value skele coins
+        now = time
+        t = 0.0001 - now.day * 0.2 + now.hour + now.minute / 60.0
+        value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
+        if value < -0.5:
+            return value
+        return max(0.001, value)
+    
+    def make_data(self):
+        deltatime = datetime.timedelta(hours=24)
+        increment = datetime.timedelta(minutes=5)
+        now = datetime.datetime.now()
+        start_time = now - deltatime
+
+        # data = []
+        data_x = []
+        data_y = []
+
+        current_time = start_time
+        current = 0
+
+        for iter in range(int(deltatime / increment)):
+            current_time += increment
+            x = current_time
+            y = self.get_value(x)
+            # print(x, y)
+            # data.append((x, y))
+            data_x.append(x)
+            data_y.append(y)
+            current = y
+        # current is the last known value
+        return (data_x, data_y, start_time, now, current)
+
+
+    def generate_image(self):
+        import numpy as np
+        import random
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+
+        sayings = [
+            "1 $GHOUL = Y $SKELE"
+            "WE LIKE THE STONK",
+            "SPOOOOOOOOOOOOOOKY",
+            "SPOOKYHANDS",
+            "BUY SPOOKY, SELL EVEN SPOOKIER"
+            "DOOT DOOT"
+        ]
+
+        data_x, data_y, start_time, end_time, current = self.make_data()
+
+        plt.title(f"1 $GHOUL = {current:.3f} $SKELE")
+        plt.ylabel(random.choice(sayings))
+        plt.xlabel("Previous 24 hours")
+        # plt.legend()
+        plt.grid(True)
+        # plt.plot(data_np, label="MONEEEYYYY")
+        plt.plot(data_x, data_y, "g", label="MONNNEEYYYY")
+        plt.xlim(left=start_time)
+        # plt.xaxis.
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%l:%M %P'))
+        plt.xticks(rotation=10,ha='right')
+        plt.ylim(bottom=0)
+        # plt.show()
+        plt.savefig("spookystonks.png", dpi=240)
+
+
     @commands.command("trade_gt")
     @commands.guild_only()
     async def trade_gt(self, ctx, amount: int):
