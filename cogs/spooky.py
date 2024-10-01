@@ -107,6 +107,7 @@ class SpookyMonth(commands.Cog):
                 pass
             else:
                 allow_spooky = False
+        
 
         # I'm pretty sure I restart this bot daily so this should do
         if not(allow_spooky):
@@ -241,7 +242,7 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, increment, None)
     
     # cheat commands
-    @commands.command("cheat_ghoultokens")
+    @commands.command("cheat_ghoultokens", hidden=True)
     @commands.guild_only()
     async def cheat_ghoultokens(self, ctx, user: discord.User, delta_ghoultokens: int):
         """
@@ -250,7 +251,7 @@ class SpookyMonth(commands.Cog):
         if ctx.author.id in lazy_admins:
             await self.update_user(user.id, delta_ghoultokens=delta_ghoultokens)
     
-    @commands.command("cheat_skelecoin")
+    @commands.command("cheat_skelecoin", hidden=True)
     @commands.guild_only()
     async def cheat_skelecoin(self, ctx, user: discord.User, skelecoin: int):
         """
@@ -436,7 +437,7 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
             await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}")
 
-    @commands.command("secret")
+    @commands.command("secret", hidden=True)
     @commands.guild_only()
     async def secret(self, ctx):
         """
@@ -451,7 +452,7 @@ class SpookyMonth(commands.Cog):
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-30)
             await ctx.send(f"The secret word is `{self.bonus_phrase}`. {get_sendoff()}")
 
-    @commands.command("buy_art")
+    @commands.command("buy_art", hidden=True)
     @commands.guild_only()
     async def buy_art(self, ctx):
         """
@@ -514,7 +515,7 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send(f"Come back again when you have some SKELE COIN. {get_sendoff()}")
 
-    @commands.command("market_manipulation")
+    @commands.command("market_manipulation", hidden=True)
     @commands.guild_only()
     async def market_manipulation(self, ctx):
         """
@@ -543,7 +544,7 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send("You don't have enough SKELE COIN for this.")
     
-    @commands.command("this_does_nothing")
+    @commands.command("this_does_nothing", hidden=True)
     @commands.guild_only()
     async def this_does_nothing(self, ctx):
         """
