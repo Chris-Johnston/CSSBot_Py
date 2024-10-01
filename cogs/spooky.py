@@ -140,6 +140,8 @@ class SpookyMonth(commands.Cog):
         logger.info("reading names from file")
         with open(spooky_nicknames, 'rt') as n:
             self.nickname_fmt_strings = n.read().splitlines()
+
+        logger.info("spooky module is up")
         
     
     def get_stonk_value(self):
