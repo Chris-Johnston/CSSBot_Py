@@ -76,7 +76,7 @@ default_extensions = ['cogs.basic',
                       'cogs.nofuckinziti',
                       'cogs.nofreakintutors',
                       'cogs.poke',
-                      # 'cogs.spooky']
+                      'cogs.spooky' # DOOT DOOT
                       ]
 
 
