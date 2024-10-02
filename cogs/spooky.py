@@ -400,7 +400,7 @@ class SpookyMonth(commands.Cog):
     @commands.command(name="send_ghoultokens", aliases=["send_gt", "send_ghoultoken"])
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
-    async def send_ghoultokens(self, ctx, recipient: discord.User, amount: int):
+    async def send_ghoultokens(self, ctx, recipient: discord.Member, amount: int):
         """
         Send someone some ghoul tokens
         """
@@ -430,7 +430,7 @@ class SpookyMonth(commands.Cog):
     @commands.command(name="send_skelecoin", aliases=["send_sc", "send_skelecoins"])
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
-    async def send_skelecoins(self, ctx, recipient: discord.User, amount: int):
+    async def send_skelecoins(self, ctx, recipient: discord.Member, amount: int):
         """
         Send someone some skele coin
         """
@@ -721,7 +721,7 @@ class SpookyMonth(commands.Cog):
     @commands.command("spook")
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
-    async def spook_user(self, ctx, target_user: discord.User):
+    async def spook_user(self, ctx, target_user: discord.Member):
         """
         Scare a user! Ahh! (Costs a random number of SKELE COIN)
         """
@@ -925,6 +925,20 @@ class SpookyMonth(commands.Cog):
             for i in range(8):
                 garden[i * 8 + 7] = garden[i * 8 + 7] + '\n'
             await ctx.send(''.join(garden))
+
+    # @commands.command("buy_scary_cash", hidden=True)
+    # @commands.guild_only()
+    # @commands.cooldown(2, 60, commands.BucketType.user)
+    # async def buy_scary_cash(ctx, amount):
+    #     """
+    #     Exchanges an amount of GHOUL TOKEN for SCARY CASH.
+    #     (1 SCARY CASH == 500,000 GHOUL TOKEN)
+
+    #     There is a limited amount of SCARY CASH in rotation.
+    #     """
+
+    #     if not amount in primes:
+    #         ctx.send("You can't trade ")
 
 
 def setup(bot):
