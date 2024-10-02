@@ -844,7 +844,7 @@ class SpookyMonth(commands.Cog):
     @commands.command("scary_garden", hidden=True)
     @commands.guild_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
-    async def scary_garden(ctx):
+    async def scary_garden(self, ctx):
         """
         Garden, but scary. (Requires being spooky, and costs 62 ghoul tokens)
         """
