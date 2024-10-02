@@ -489,7 +489,7 @@ class SpookyMonth(commands.Cog):
         
         await self.update_user(user_id, delta_skelecoin=-50)
 
-        self.generate_image()
+        self.generate_image(False, 24)
 
         f = discord.File(open('spookystonks.png', 'rb'))
 
