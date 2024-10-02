@@ -582,7 +582,10 @@ class SpookyMonth(commands.Cog):
         plt.plot(data_x, data_y, "g", label="MONNNEEYYYY")
         plt.xlim(left=start_time)
         # plt.xaxis.
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%l:%M %P'))
+        if future:
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%x %l:%M %P'))
+        else:
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%l:%M %P'))
         plt.xticks(rotation=10,ha='right')
         plt.ylim(bottom=0)
         # plt.show()
