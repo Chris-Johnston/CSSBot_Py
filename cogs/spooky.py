@@ -734,11 +734,16 @@ class SpookyMonth(commands.Cog):
         """
         Manipulates the market. (Costs 50000 SKELE COIN, Spooky users only)
         """
+
         user_id = ctx.author.id
         is_spooky = is_user_spooky(ctx.author)
 
         if not(is_spooky):
             await ctx.send(f"Nah, not spooky enough 4 me")
+            return
+        
+        if not is_market_closed():
+            await ctx.send("The market is open right now, so you can't do that currently.")
             return
         
         user = await self.get_user(user_id)
