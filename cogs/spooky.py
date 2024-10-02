@@ -587,6 +587,8 @@ class SpookyMonth(commands.Cog):
 
         data_x, data_y, start_time, end_time, current = self.make_data(future, hours)
 
+        plt.close()
+        plt.cla()
         plt.title(f"1 $GHOUL = {current:.3f} $SKELE")
         plt.ylabel(random.choice(sayings))
         plt.xlabel(f"Previous {hours} hours")
