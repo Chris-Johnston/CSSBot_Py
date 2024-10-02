@@ -352,6 +352,9 @@ class SpookyMonth(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def balance(self, ctx):
+        """
+        Views your current balance.
+        """
         author_id = ctx.author.id
         user = await self.get_user(author_id)
         is_spooky = is_user_spooky(ctx.author)
