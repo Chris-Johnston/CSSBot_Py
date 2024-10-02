@@ -828,6 +828,91 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
 
+    @commands.command("scary_garden", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(2, 60, commands.BucketType.user)
+    async def scary_garden(ctx):
+        """
+        Garden, but scary. (Requires being spooky, and costs 62 ghoul tokens)
+        """
+
+        # dunno how much effort it takes to customize the help command to show commands only to users who are spooky
+        # not sure if I care that much
+
+        is_spooky = is_user_spooky(ctx.author)
+        if not is_spooky:
+            await ctx.send(f"🌲 Spooky users only. 🍄 {get_sendoff()}")
+            return
+
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if 62 >= user.ghoultokens:
+            await ctx.send("You do not have enough SKELE COIN.")
+            return
+        else:
+            await self.update_user(user_id, delta_ghoultokens=-62, delta_skelecoin=None)
+
+        # 🕷️🕸️🪳🪱🐛🐀🐈‍⬛🥀🍂🍁🎃👻🧛
+
+        filler = '🥀'
+        flowers = [
+                '🥀',
+                '🪦',
+                '🕯️',
+                '🕸️',
+                '🏚️',
+            ]
+        plants = [
+                '🥀',
+                '🍂',
+                '🍁'
+            ]
+        ghouls = [
+               '🎃','👻','🧛','😱','💀','🧛',
+            ]
+        animals = [
+                '🕷️','🪳','🪱','🐛','🐈‍⬛','🦇','🦉','🪲'
+        ]
+
+        async with ctx.channel.typing():
+            # 8x8 grid: 64 choices
+            # 16-24 flowers
+            # 1-3 animals
+            # 3-5 vegetables
+            # 5-15 plants
+            # 
+            # begin as single-dimension list, wrap when sending message
+            garden = [ u'' for i in range(64) ]
+
+            # add the planti bois
+            idx = 0
+            # flowers first
+            for i in range(random.randint(8, 16)):
+                garden[idx] = random.choice(flowers)
+                idx += 1
+            # then animals
+            for i in range(random.randint(1, 3)):
+                garden[idx] = random.choice(animals)
+                idx += 1
+            # vegertals
+            for i in range(random.randint(5, 10)):
+                garden[idx] = random.choice(ghouls)
+                idx += 1
+            # other green leafy things
+            for i in range(random.randint(5, 8)):
+                garden[idx] = random.choice(plants)
+                idx += 1
+            # fill remaining array with seedlings
+            for i in range(idx, 64):
+                garden[i] = filler
+
+            # shuffle and assemble garden
+            random.shuffle(garden)
+            for i in range(8):
+                garden[i * 8 + 7] = garden[i * 8 + 7] + '\n'
+            await ctx.send(''.join(garden))
+
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
