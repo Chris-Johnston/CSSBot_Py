@@ -861,14 +861,14 @@ class SpookyMonth(commands.Cog):
         user = await self.get_user(user_id)
 
         if 62 >= user.ghoultokens:
-            await ctx.send("You do not have enough SKELE COIN.")
+            await ctx.send("You do not have enough GHOUL TOKENS.")
             return
         else:
             await self.update_user(user_id, delta_ghoultokens=-62, delta_skelecoin=None)
 
         # 🕷️🕸️🪳🪱🐛🐀🐈‍⬛🥀🍂🍁🎃👻🧛
 
-        filler = '🥀'
+        filler = '🪦'
         flowers = [
                 '🥀',
                 '🪦',
