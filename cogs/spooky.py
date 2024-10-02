@@ -473,10 +473,10 @@ class SpookyMonth(commands.Cog):
         user_balance = ""
 
         if user.ghoultokens > 0 or user.skelecoin > 0:
-            user_balance = f"You have {user.ghoultokens} GHOUL TOKEN and {user.skelecoin} SKELE COIN available to trade."
+            user_balance = f"You have {user.ghoultokens:.3f} GHOUL TOKEN and {user.skelecoin:.3f} SKELE COIN available to trade."
 
         conversion_rate = self.get_stonk_value()
-        msg = f"The current market conversion rate is:\n1 GHOUL TOKEN = {conversion_rate} SKELE COIN(S)\n1 SKELE COIN = {1 / conversion_rate} GHOUL TOKEN(S)"
+        msg = f"The current market conversion rate is:\n1 GHOUL TOKEN = {conversion_rate:.4f} SKELE COIN(S)\n1 SKELE COIN = {1 / conversion_rate:.4f} GHOUL TOKEN(S)"
         if user_balance:
             msg += f"\n{user_balance}"
         await ctx.send(msg)
