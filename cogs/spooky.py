@@ -547,7 +547,7 @@ class SpookyMonth(commands.Cog):
     @commands.cooldown(5, 60, commands.BucketType.user)
     async def send_ghoultokens(self, ctx, recipient: discord.Member, amount_scary_cash: int):
         """
-        Send someone some scary cash
+        Send someone some SCARY CASH.
         """
         if amount_scary_cash <= 0:
             await ctx.send("Nope")
@@ -562,6 +562,8 @@ class SpookyMonth(commands.Cog):
                 # sharing is very scary, so reward this behavior
                 await self.update_user(recipient.id, delta_scary_cash=amount_scary_cash, delta_friendship_points=1)
                 await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
+            else:
+                await ctx.send("You don't have enough SCARY CASH.")
 
     @commands.command(name="gambling!", hidden=True)
     @commands.guild_only()
