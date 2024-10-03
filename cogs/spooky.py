@@ -262,7 +262,7 @@ class SpookyMonth(commands.Cog):
         else:
             # new user
             logger.info(f"new user user_id {user_id}")
-            self.state.users[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0)
+            self.state.users[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0, delta_friendship_points or 0, delta_scary_cash or 0)
         
         await self.write_state()
     
