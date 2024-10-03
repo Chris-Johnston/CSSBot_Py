@@ -51,6 +51,7 @@ def get_market_closed_message():
         msg += get_sendoff()
         return msg
 
+scary_cash_total_supply = 5000
 
 @dataclass
 class User(JSONWizard):
@@ -271,6 +272,21 @@ class SpookyMonth(commands.Cog):
             return self.state.users[user_id]
         else:
             return User(0, 0)
+
+    def determine_remaining_scary_cash_supply(self):
+        """
+        There is a limited supply of scary cash in circulation. It can only be bought, traded, or gambled.
+        """
+        # probably should have done this better but whatever
+        consumed_supply = 0
+        for user in self.state.users:
+            consumed_supply += user.scary_cash
+
+        # overconsumption
+        if consumed_supply > scary_cash_total_supply:
+            return 0
+
+        return scary_cash_total_supply - consumed_supply
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -526,6 +542,54 @@ class SpookyMonth(commands.Cog):
                 await self.update_user(recipient.id, delta_skelecoin=(amount), delta_friendship_points=1)
                 await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
+    @commands.command(name="send_scary_cash")
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def send_ghoultokens(self, ctx, recipient: discord.Member, amount_scary_cash: int):
+        """
+        Send someone some scary cash
+        """
+        if amount_scary_cash <= 0:
+            await ctx.send("Nope")
+        elif ctx.author.id == recipient.id:
+            await ctx.send("no.")
+        else:
+            author_id = ctx.author.id
+            user = await self.get_user(author_id)
+            if user.scary_cash >= amount_scary_cash:
+                await self.update_user(author_id, delta_scary_cash=-amount_scary_cash)
+
+                # sharing is very scary, so reward this behavior
+                await self.update_user(recipient.id, delta_scary_cash=amount_scary_cash, delta_friendship_points=1)
+                await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
+
+    @commands.command(name="gambling!", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def gambling_v1(self, ctx, lucky_number: int, wager_scary_cash: int):
+        """
+        Gambling!
+        """
+        remaining_supply = self.determine_remaining_scary_cash_supply()
+
+        if remaining_supply == 0:
+            await ctx.send("There isn't any SCARY CASH remaining in the bank, so you can't win anything.")
+            return
+
+        author_id = ctx.author.id
+        user = await self.get_user(author_id)
+        if wager_scary_cash > user.scary_cash:
+            await ctx.send("You don't have that much SCARY CASH to wager.")
+            return
+
+        if random.randint(0, 1000) == lucky_number:
+            payout = min(math.ceil(wager_scary_cash * 4.2), remaining_supply)
+            await self.update_user(author_id, delta_scary_cash=payout)
+            await ctx.send(f"Wow, you won ${payout} SCARY CASH.")
+        else:
+            await self.update_user(author_id, delta_scary_cash=-wager_scary_cash)
+            await ctx.send("You lost.")
+
     @commands.command("stonks")
     @commands.guild_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
@@ -728,6 +792,86 @@ class SpookyMonth(commands.Cog):
             ghoultoken = math.floor(amount * (1 / self.get_stonk_value()))
             await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
             await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}")
+
+    # # y\ =500\ +\ 500\ \frac{5000}{x\ -\ 10}
+
+    @commands.command("scary_cash", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def check_scary_cash_exchange_rate(self, ctx):
+        """
+        Checks the current exchange rate of SCARY CASH to GHOUL TOKENs.
+        """
+        remaining_supply = self.determine_remaining_scary_cash_supply()
+        exchange_rate = self.get_scary_cash_exchange_rate()
+
+        msg = ""
+        if remaining_supply == 0:
+            msg += "There is no remaining supply of SCARY CASH in the bank. "
+            # could show the distribution at this point
+        else:
+            msg += f"The bank has ${remaining_supply} SCARY CASH remaining for circulation."
+        
+        msg += "The exchange rate is $1 SCARY CASH = {exchange_rate:.2f} GHOUL TOKENs. "
+        msg += get_sendoff()
+
+        await ctx.send(msg)
+
+    @commands.command("buy_scary_cash", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def buy_scary_cash(self, ctx, amount_ghoul_token: int):
+        """
+        Exchanges an amount of GHOUL TOKENs to by SCARY CASH at the current exchange rate.
+        """
+        remaining_supply = self.determine_remaining_scary_cash_supply()
+        if remaining_supply == 0:
+            await ctx.send("There is no remaining supply of SCARY CASH available for purchase. Consider trading with others.")
+            return
+
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+
+        if amount_ghoul_token > user.ghoultokens:
+            await ctx.send("You don't have that many GHOUL TOKENS")
+            return
+        # else:
+        #     ghoultoken = math.floor(amount * (1 / self.get_stonk_value()))
+        #     await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
+        #     await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}")
+
+        remaining_ghoul_token = amount_ghoul_token
+        amount_purchased = 0
+
+        while remaining_ghoul_token > 0 and remaining_supply > 0:
+            # purchase one by one because supply is limited
+            current_rate = self.get_scary_cash_rate(remaining_supply - amount_purchased)
+
+            if current_rate > remaining_ghoul_token:
+                # cost is too high to buy any more
+                break
+            
+            amount_purchased += 1
+            remaining_ghoul_token -= current_rate
+
+        spent_ghoul_token = amount_ghoul_token - remaining_ghoul_token
+        await self.update_user(user_id, delta_ghoultokens=-spent_ghoul_token, delta_scary_cash=amount_purchased)
+        
+        msg = f"Exchanged {spent_ghoul_token} GHOUL TOKEN for ${amount_purchased} SCARY CASH. There is ${remaining_supply - amount_purchased} SCARY CASH remaining in the bank."
+        await ctx.send(msg)
+    
+    def get_scary_cash_exchange_rate(self):
+        remaining_supply = self.determine_remaining_scary_cash_supply()
+        if remaining_supply == 0:
+            return "∞"
+        # y\ =500\ +\ 500\ \frac{5000}{x\ -\ 10}
+        y = 500 + ((500 * scary_cash_total_supply) / (remaining_supply - 10))
+        return y
+
+    def get_scary_cash_rate(self, remaining_supply):
+        # y\ =500\ +\ 500\ \frac{5000}{x\ -\ 10}
+        y = 500 + ((500 * scary_cash_total_supply) / (remaining_supply - 10))
+        return y
 
     @commands.command("secret", hidden=True)
     @commands.guild_only()
