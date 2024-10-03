@@ -818,9 +818,9 @@ class SpookyMonth(commands.Cog):
             msg += "There is no remaining supply of SCARY CASH in the bank. "
             # could show the distribution at this point
         else:
-            msg += f"The bank has {remaining_supply / scary_cash_total_supply:.0%}% supply of SCARY CASH remaining for circulation."
+            msg += f"The bank has {remaining_supply / scary_cash_total_supply:.0%} of the SCARY CASH supply remaining."
         
-        msg += "The exchange rate is $1 SCARY CASH = {exchange_rate:.2f} GHOUL TOKENs. "
+        msg += f"The exchange rate is $1 SCARY CASH = {exchange_rate:.2f} GHOUL TOKENs. "
         msg += get_sendoff()
 
         await ctx.send(msg)
