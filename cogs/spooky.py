@@ -629,7 +629,7 @@ class SpookyMonth(commands.Cog):
     @commands.guild_only()
     async def stonkcharts(self, ctx):
         """
-        (COSTS 50 SKELE COIN) View Ghoul Token / Skele-Coin conversion rate as a graph.
+        (COSTS 500 SKELE COIN) View Ghoul Token / Skele-Coin conversion rate as a graph.
         """
 
         # TODO: pay an absurd amount of money in order to game the system and look ahead in time
@@ -641,13 +641,13 @@ class SpookyMonth(commands.Cog):
             await ctx.send("You do not have enough SKELE COIN.")
             return
         
-        await self.update_user(user_id, delta_skelecoin=-50, delta_friendship_points=1)
+        await self.update_user(user_id, delta_skelecoin=-500, delta_friendship_points=1)
 
         self.generate_image(False, 24)
 
         f = discord.File(open('spookystonks.png', 'rb'))
 
-        await ctx.send("hey so this code was really annoying to write and it's still not good so I'm charging you 50 SKELE COIN. No refunds.", file=f)
+        await ctx.send("hey so this code was really annoying to write and it's still not good so I'm charging you 500 SKELE COIN. No refunds.", file=f)
 
     @commands.command("insider_trading", hidden=True)
     @commands.cooldown(1, 600, commands.BucketType.guild)
