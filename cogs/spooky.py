@@ -279,7 +279,8 @@ class SpookyMonth(commands.Cog):
         """
         # probably should have done this better but whatever
         consumed_supply = 0
-        for user in self.state.users:
+        for user_key in self.state.users:
+            user = self.state.users[user_key]
             consumed_supply += user.scary_cash
 
         # overconsumption
