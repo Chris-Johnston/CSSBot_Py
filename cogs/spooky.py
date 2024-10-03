@@ -590,6 +590,11 @@ class SpookyMonth(commands.Cog):
 
         author_id = ctx.author.id
         user = await self.get_user(author_id)
+
+        if wager_scary_cash <= 0:
+            await ctx.send("you know I almost let this bug in, but not anymore")
+            return
+
         if wager_scary_cash > user.scarycash:
             await ctx.send("You don't have that much SCARY CASH to wager.")
             return
