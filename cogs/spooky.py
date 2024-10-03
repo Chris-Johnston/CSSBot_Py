@@ -55,11 +55,15 @@ scary_cash_total_supply = 5000
 
 @dataclass
 class User(JSONWizard):
+    #
+    # THESE MUST BE ONE WORD WITHOUT ANY DELIMITERS BECAUSE JSONWIZARD IS TRYING TO BE CLEVER
+    # AND TURNS FOO_BAR INTO fooBar
+    #
     ghoultokens: int
     skelecoin: int
     # +1 for social behavior
-    friendship_points: int
-    scary_cash: int
+    friendshippoints: int
+    scarycash: int
 
 @dataclass
 class State(JSONWizard):
@@ -222,8 +226,8 @@ class SpookyMonth(commands.Cog):
                     for k, v in self.state.users.items():
                         user_id = int(k)
 
-                        friendship_points = v.get('friendship_points', 0)
-                        scary_cash = v.get('scary_cash', 0)
+                        friendship_points = v.get('friendshippoints', 0)
+                        scary_cash = v.get('scarycash', 0)
 
                         actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'], friendship_points, scary_cash)
                     self.state.users = actual_state
