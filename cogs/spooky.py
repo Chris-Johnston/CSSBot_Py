@@ -260,9 +260,9 @@ class SpookyMonth(commands.Cog):
             if delta_skelecoin is not None:
                 self.state.users[user_id].skelecoin += delta_skelecoin
             if delta_friendship_points is not None:
-                self.state.users[user_id].friendship_points += delta_friendship_points
+                self.state.users[user_id].friendshippoints += delta_friendship_points
             if delta_scary_cash is not None:
-                self.state.users[user_id].scary_cash += delta_scary_cash
+                self.state.users[user_id].scarycash += delta_scary_cash
         else:
             # new user
             logger.info(f"new user user_id {user_id}")
@@ -285,7 +285,7 @@ class SpookyMonth(commands.Cog):
         consumed_supply = 0
         for user_key in self.state.users:
             user = self.state.users[user_key]
-            consumed_supply += user.scary_cash
+            consumed_supply += user.scarycash
 
         # overconsumption
         if consumed_supply > scary_cash_total_supply:
@@ -410,7 +410,7 @@ class SpookyMonth(commands.Cog):
         """
         spookyboard but for friendship points
         """
-        spooky_ppl = sorted(self.state.users.items(), key=lambda x: x[1].friendship_points, reverse=True)[:10]
+        spooky_ppl = sorted(self.state.users.items(), key=lambda x: x[1].friendshippoints, reverse=True)[:10]
 
         leaderboard_embed = discord.Embed()
         leaderboard_embed.title = "Friendlyboard"
@@ -421,7 +421,7 @@ class SpookyMonth(commands.Cog):
         message = ""
 
         for person_id, person_user in spooky_ppl:
-            friendship_points = person_user.friendship_points
+            friendship_points = person_user.friendshippoints
             # display_name = ctx.guild.get_member(person_id).display_name
             # no mentions in embed body?
             display_name = f"<@{person_id}>"
@@ -465,9 +465,9 @@ class SpookyMonth(commands.Cog):
             if user.skelecoin != 0:
                 msg += f"{user.skelecoin:.3f} SKELE-COIN\n"
             
-            if user.scary_cash != 0:
-                msg += f"{user.scary_cash} SCARY CASH\n"
-            if user.scary_cash == scary_cash_total_supply:
+            if user.scarycash != 0:
+                msg += f"{user.scarycash} SCARY CASH\n"
+            if user.scarycash == scary_cash_total_supply:
                 msg += "You own the entire supply of SCARY CASH."
             
             if abs(user.ghoultokens) in [69, 420, 1337] or abs(user.skelecoin) in [69, 420, 1337]:
@@ -566,7 +566,7 @@ class SpookyMonth(commands.Cog):
         else:
             author_id = ctx.author.id
             user = await self.get_user(author_id)
-            if user.scary_cash >= amount_scary_cash:
+            if user.scarycash >= amount_scary_cash:
                 await self.update_user(author_id, delta_scary_cash=-amount_scary_cash)
 
                 # sharing is very scary, so reward this behavior
@@ -590,7 +590,7 @@ class SpookyMonth(commands.Cog):
 
         author_id = ctx.author.id
         user = await self.get_user(author_id)
-        if wager_scary_cash > user.scary_cash:
+        if wager_scary_cash > user.scarycash:
             await ctx.send("You don't have that much SCARY CASH to wager.")
             return
 
