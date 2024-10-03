@@ -460,6 +460,11 @@ class SpookyMonth(commands.Cog):
             if user.skelecoin != 0:
                 msg += f"{user.skelecoin:.3f} SKELE-COIN\n"
             
+            if user.scary_cash != 0:
+                msg += f"{user.scary_cash} SCARY CASH\n"
+            if user.scary_cash == scary_cash_total_supply:
+                msg += "You own the entire supply of SCARY CASH."
+            
             if abs(user.ghoultokens) in [69, 420, 1337] or abs(user.skelecoin) in [69, 420, 1337]:
                 msg += "heh."
             
@@ -812,7 +817,7 @@ class SpookyMonth(commands.Cog):
             msg += "There is no remaining supply of SCARY CASH in the bank. "
             # could show the distribution at this point
         else:
-            msg += f"The bank has ${remaining_supply} SCARY CASH remaining for circulation."
+            msg += f"The bank has {remaining_supply / scary_cash_total_supply:.0%}% supply of SCARY CASH remaining for circulation."
         
         msg += "The exchange rate is $1 SCARY CASH = {exchange_rate:.2f} GHOUL TOKENs. "
         msg += get_sendoff()
@@ -859,7 +864,7 @@ class SpookyMonth(commands.Cog):
         spent_ghoul_token = amount_ghoul_token - remaining_ghoul_token
         await self.update_user(user_id, delta_ghoultokens=-spent_ghoul_token, delta_scary_cash=amount_purchased)
         
-        msg = f"Exchanged {spent_ghoul_token} GHOUL TOKEN for ${amount_purchased} SCARY CASH. There is ${remaining_supply - amount_purchased} SCARY CASH remaining in the bank."
+        msg = f"Exchanged {spent_ghoul_token} GHOUL TOKEN for ${amount_purchased} SCARY CASH. There is {(remaining_supply - amount_purchased) / scary_cash_total_supply:.0%}% SCARY CASH remaining in the bank."
         await ctx.send(msg)
     
     def get_scary_cash_exchange_rate(self):
