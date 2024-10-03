@@ -321,7 +321,7 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("cheat_scary_cash", hidden=True)
     @commands.guild_only()
-    async def cheat_friendship(self, ctx, user: discord.User, delta_scary_cash: int):
+    async def cheat_scary_cash(self, ctx, user: discord.User, delta_scary_cash: int):
         """
         Cheat c0deZ to update the scary cash for a user
         """
