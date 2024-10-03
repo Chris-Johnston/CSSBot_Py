@@ -56,6 +56,9 @@ def get_market_closed_message():
 class User(JSONWizard):
     ghoultokens: int
     skelecoin: int
+    # +1 for social behavior
+    friendship_points: int
+    scary_cash: int
 
 @dataclass
 class State(JSONWizard):
@@ -217,7 +220,11 @@ class SpookyMonth(commands.Cog):
                     actual_state = {}
                     for k, v in self.state.users.items():
                         user_id = int(k)
-                        actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'])
+
+                        friendship_points = v.get('friendship_points', 0)
+                        scary_cash = v.get('scary_cash', 0)
+
+                        actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'], friendship_points, scary_cash)
                     self.state.users = actual_state
                     logger.info(f'state is: {self.state}')
             logger.info("done reading state file")
@@ -239,14 +246,18 @@ class SpookyMonth(commands.Cog):
             logger.warn("failed to write state for some reason idk", e)
     
     # the good stuff
-    async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None):
-        logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}")
+    async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None, delta_friendship_points=None, delta_scary_cash=None):
+        logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin} friendship {delta_friendship_points} scary cash {delta_scary_cash}")
         if user_id in self.state.users:
             # update existing
             if delta_ghoultokens is not None:
                 self.state.users[user_id].ghoultokens += delta_ghoultokens
             if delta_skelecoin is not None:
                 self.state.users[user_id].skelecoin += delta_skelecoin
+            if delta_friendship_points is not None:
+                self.state.users[user_id].friendship_points += delta_friendship_points
+            if delta_scary_cash is not None:
+                self.state.users[user_id].scary_cash += delta_scary_cash
         else:
             # new user
             logger.info(f"new user user_id {user_id}")
@@ -298,6 +309,24 @@ class SpookyMonth(commands.Cog):
         """
         if ctx.author.id in lazy_admins:
             await self.update_user(user.id, delta_ghoultokens=delta_ghoultokens)
+
+    @commands.command("cheat_friendship", hidden=True)
+    @commands.guild_only()
+    async def cheat_friendship(self, ctx, user: discord.User, delta_friendship: int):
+        """
+        Cheat c0deZ to update the friendship points for a user
+        """
+        if ctx.author.id in lazy_admins:
+            await self.update_user(user.id, delta_friendship_points=delta_friendship)
+
+    @commands.command("cheat_scary_cash", hidden=True)
+    @commands.guild_only()
+    async def cheat_friendship(self, ctx, user: discord.User, delta_scary_cash: int):
+        """
+        Cheat c0deZ to update the scary cash for a user
+        """
+        if ctx.author.id in lazy_admins:
+            await self.update_user(user.id, delta_scary_cash=delta_scary_cash)
     
     @commands.command("cheat_skelecoin", hidden=True)
     @commands.guild_only()
@@ -315,6 +344,11 @@ class SpookyMonth(commands.Cog):
         """
         View server rankings ordered by GHOUL TOKENS.
         """
+
+        if random.randint(0, 30) == 2:
+            await self.friendlyboard(ctx)
+            return
+
         # ordered by ghoultokens
         # values are [ (index, (user_id, User))]
         # user id is x[1][0]
@@ -347,6 +381,43 @@ class SpookyMonth(commands.Cog):
         
         leaderboard_embed.description = message
         await ctx.send("", embed=leaderboard_embed)
+
+    @commands.command("friendlyboard", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.guild)
+    async def friendlyboard(self, ctx):
+        """
+        spookyboard but for friendship points
+        """
+        spooky_ppl = sorted(self.state.users.items(), key=lambda x: x[1].friendship_points, reverse=True)[:10]
+
+        leaderboard_embed = discord.Embed()
+        leaderboard_embed.title = "Friendlyboard"
+        
+        leaderboard_embed.color = discord.Color.gold()
+        leaderboard_embed.set_footer(text=f"The top users ordered by FRIENDSHIP POINTS")
+
+        message = ""
+
+        for person_id, person_user in spooky_ppl:
+            friendship_points = person_user.friendship_points
+            # display_name = ctx.guild.get_member(person_id).display_name
+            # no mentions in embed body?
+            display_name = f"<@{person_id}>"
+
+            # escape name
+            # zero_width_space = '​'
+            # display_name.replace('@', '@' + zero_width_space)
+
+            # TODO different emoji if I feel like it
+            # emoji = get_emoji_by_tokens(person_ghoultokens)
+            emoji = ""
+            if friendship_points > 0:
+                emoji = "🙂"
+            message += f"{emoji} **{friendship_points}** - {display_name}\n"
+        
+        leaderboard_embed.description = message
+        await ctx.send("Maybe the real horrors were the friends we made along the way 🙂", embed=leaderboard_embed)
 
     @commands.command("balance")
     @commands.guild_only()
@@ -424,7 +495,7 @@ class SpookyMonth(commands.Cog):
                     amount *= 100
 
                 # sharing is very scary, so reward this behavior
-                await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
+                await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None, delta_friendship_points=1)
                 await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
     @commands.command(name="send_skelecoin", aliases=["send_sc", "send_skelecoins"])
@@ -452,7 +523,7 @@ class SpookyMonth(commands.Cog):
                     amount *= 100000
 
                 # sharing is very scary, so reward this behavior
-                await self.update_user(recipient.id, delta_skelecoin=(amount))
+                await self.update_user(recipient.id, delta_skelecoin=(amount), delta_friendship_points=1)
                 await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
     @commands.command("stonks")
@@ -498,7 +569,7 @@ class SpookyMonth(commands.Cog):
             await ctx.send("You do not have enough SKELE COIN.")
             return
         
-        await self.update_user(user_id, delta_skelecoin=-50)
+        await self.update_user(user_id, delta_skelecoin=-50, delta_friendship_points=1)
 
         self.generate_image(False, 24)
 
@@ -720,6 +791,17 @@ class SpookyMonth(commands.Cog):
                 richer = " [Come back when you're a little more... richer.](<https://www.youtube.com/watch?v=rfBtu0iyZFw>)"
             await ctx.send(f"Insufficient SKELE COIN.{richer}")
 
+    def is_member_spooky(self, user: discord.Member) -> bool:
+        """
+        Check if member has a spooky role
+        """
+        if user is None:
+            return False
+        for r in user.roles:
+            if r.id == spooky_roleid:
+                return True
+        return False
+
     @commands.command("spook")
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
@@ -738,6 +820,10 @@ class SpookyMonth(commands.Cog):
             cost = random.randint(0, 200)
             await ctx.send(f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n<@{target_user.id}> has been spooked by <@{user_id}>!")
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-cost)
+
+            if not self.is_member_spooky(target_user):
+                # first time spook deserves friendship
+                await self.update_user(user_id, delta_friendship_points=100)
 
             # if they already have the role too bad should have noticed
             spooky_role = ctx.guild.get_role(spooky_roleid)
@@ -767,7 +853,7 @@ class SpookyMonth(commands.Cog):
         user = await self.get_user(user_id)
         
         if user.skelecoin >= 50000:
-            await self.update_user(user_id, delta_skelecoin=-50000)
+            await self.update_user(user_id, delta_skelecoin=-50000, delta_friendship_points=1)
 
             self.stonk_weight_a = random.randint(1, 10)
             self.stonk_weight_b = random.randint(1, 10)
