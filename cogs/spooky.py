@@ -604,6 +604,8 @@ class SpookyMonth(commands.Cog):
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%l:%M %P'))
         plt.xticks(rotation=10,ha='right')
         plt.ylim(bottom=0)
+        # show the current time
+        plt.axvline(datetime.datetime.now(), label = "server time", color = "b")
         # plt.show()
         plt.savefig("spookystonks.png", dpi=240)
 
