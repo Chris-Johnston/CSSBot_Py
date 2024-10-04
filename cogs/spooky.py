@@ -494,6 +494,30 @@ class SpookyMonth(commands.Cog):
             await ctx.send("doot https://www.youtube.com/watch?v=eVrYbKBrI7o")
         else:
             await ctx.send(f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens. {get_sendoff()}")
+
+    @commands.command("skeleton?")
+    @commands.guild_only()
+    @commands.cooldown(3, 60, commands.BucketType.user)
+    async def skeleton(self, ctx):
+        """
+        Skeleton?
+        """
+        is_spooky = is_user_spooky(ctx.author)
+        if is_spooky:
+            msg = "https://www.youtube.com/watch?v=BgFxeAq126g"
+            await ctx.send(msg)
+
+    @command.command("unspooky")
+    @commands.guild_only()
+    @commands.cooldown(3, 60, commands.BucketType.user)
+    async def skeleton(self, ctx):
+        """
+        This only works if you aren't spooky.
+        """
+        is_spooky = is_user_spooky(ctx.author)
+        if is_spooky:
+            return
+        await ctx.send("🙂")
     
     @commands.command(name="send_ghoultokens", aliases=["send_gt", "send_ghoultoken"])
     @commands.guild_only()
