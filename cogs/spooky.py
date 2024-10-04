@@ -680,7 +680,7 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         user = await self.get_user(user_id)
 
-        if user.skelecoin < 50:
+        if user.skelecoin < 500:
             await ctx.send("You do not have enough SKELE COIN.")
             return
         
