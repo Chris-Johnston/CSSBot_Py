@@ -770,11 +770,11 @@ class SpookyMonth(commands.Cog):
         import matplotlib.dates as mdates
 
         sayings = [
-            "1 $GHOUL = Y $SKELE"
+            "1 $GHOUL = Y $SKELE",
             "WE LIKE THE STONK",
             "SPOOOOOOOOOOOOOOKY",
             "SPOOKYHANDS",
-            "BUY SPOOKY, SELL EVEN SPOOKIER"
+            "BUY SPOOKY, SELL EVEN SPOOKIER",
             "DOOT DOOT"
         ]
 
