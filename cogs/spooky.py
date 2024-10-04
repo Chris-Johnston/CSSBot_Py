@@ -608,6 +608,39 @@ class SpookyMonth(commands.Cog):
             await self.update_user(author_id, delta_scary_cash=-wager_scary_cash)
             await ctx.send("You lost.")
 
+    @commands.command(name="gambling!!", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def gambling_v2(self, ctx, lucky_number: int):
+        """
+        Gambling!!
+        """
+        wager_scary_cash = 5
+        remaining_supply = self.determine_remaining_scary_cash_supply()
+
+        if remaining_supply == 0:
+            await ctx.send("There isn't any SCARY CASH remaining in the bank, so you can't win anything.")
+            return
+
+        author_id = ctx.author.id
+        user = await self.get_user(author_id)
+
+        if wager_scary_cash <= 0:
+            await ctx.send("you know I almost let this bug in, but not anymore")
+            return
+
+        if wager_scary_cash > user.scarycash:
+            await ctx.send("You don't have that much SCARY CASH to wager.")
+            return
+
+        if random.randint(0, 10) == lucky_number:
+            payout = min(math.ceil(wager_scary_cash * 2), remaining_supply)
+            await self.update_user(author_id, delta_scary_cash=payout)
+            await ctx.send(f"Wow, you won ${payout} SCARY CASH.")
+        else:
+            await self.update_user(author_id, delta_scary_cash=-wager_scary_cash)
+            await ctx.send("You lost.")
+
     @commands.command("stonks")
     @commands.guild_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
