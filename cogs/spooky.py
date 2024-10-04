@@ -507,7 +507,7 @@ class SpookyMonth(commands.Cog):
             msg = "https://www.youtube.com/watch?v=BgFxeAq126g"
             await ctx.send(msg)
 
-    @command.command("unspooky")
+    @commands.command("unspooky")
     @commands.guild_only()
     @commands.cooldown(3, 60, commands.BucketType.user)
     async def skeleton(self, ctx):
