@@ -202,14 +202,15 @@ class SpookyMonth(commands.Cog):
         logger.info("spooky module is up")
     
     def get_stonk_value(self):
-        # the returned value is the conversion rate between the types of coins
-        # or 1 ghoul token = value skele coins
-        now = datetime.datetime.now()
-        t = 0.0001 - now.day * 0.2 + now.hour + now.minute / 60.0
-        value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
-        if value < -0.5:
-            return value
-        return max(0.39, value)
+        # # the returned value is the conversion rate between the types of coins
+        # # or 1 ghoul token = value skele coins
+        # now = datetime.datetime.now()
+        # t = 0.0001 - now.day * 0.2 + now.hour + now.minute / 60.0
+        # value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
+        # if value < -0.5:
+        #     return value
+        # return max(0.39, value)
+        return self.get_value(datetime.datetime.now())
     
     # who needs a database, json is MY database
     async def read_state(self):
@@ -684,10 +685,14 @@ class SpookyMonth(commands.Cog):
         await ctx.send(f"server time is {datetime.datetime.now()} btw", file=f)
 
     def get_value(self, time: datetime.datetime):
+        if time.day in [5, 11, 16, 21, 24, 29]:
+            # maybe take the day off?
+            return 4
+
         # the returned value is the conversion rate between the types of coins
         # or 1 ghoul token = value skele coins
         now = time
-        t = 0.0001 - now.day * 0.2 + now.hour + now.minute / 60.0
+        t = 0.0001 - now.day * 0.5 + now.hour + now.minute / 60.0
         value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
         if value < -0.5:
             return value
