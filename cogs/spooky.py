@@ -1228,6 +1228,8 @@ class SpookyMonth(commands.Cog):
             if self.is_feature_unlocked(feature_name):
                 msg += "**Unlocked** "
             msg += f"`{feature_name}` **{price} {currency}**: {description}\n"
+
+        msg += "\nYou can buy these using `>>buy_feature`"
         
         await ctx.send(msg)
 
