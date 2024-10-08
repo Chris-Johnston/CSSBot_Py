@@ -53,6 +53,18 @@ def get_market_closed_message():
 
 scary_cash_total_supply = 5000
 
+# features that can be purchased from the store
+store = {
+    # key is feature name, value is tuple of price, currency, and description text
+    "primetrading": (12500, "skelecoin", "Enables trading during prime minutes."),
+
+    "spookysaturday": (1000, "ghoultokens", "All GHOUL TOKENS earned on Saturdays are multiplied 5x. Does not apply to the STONK market."),
+
+    "friendship": (999, "skelecoin", "Unlocks friendship."),
+
+    "gambling2": (2500, "ghoultokens", "Unlocks GAMBLING 2.")
+}
+
 @dataclass
 class User(JSONWizard):
     #
@@ -70,6 +82,8 @@ class State(JSONWizard):
     last_updated: int # timestamp
     # keyed by userid, value is User
     users: dict
+    # key by feature, value is user id who purchased its
+    unlockedfeatures: dict
 
     # def to_json_actual(self):
     #     return json.dumps({
@@ -201,6 +215,14 @@ class SpookyMonth(commands.Cog):
 
         logger.info("spooky module is up")
     
+    def is_feature_unlocked(self, feature: str) -> bool:
+        return feature in self.state.unlockedfeatures
+
+    async def unlock_feature_async(self, feature: str, user_id) -> bool:
+        self.state.unlockedfeatures[feature] = user_id
+
+        await self.write_state()
+
     def get_stonk_value(self):
         # # the returned value is the conversion rate between the types of coins
         # # or 1 ghoul token = value skele coins
@@ -312,17 +334,37 @@ class SpookyMonth(commands.Cog):
             for x in self.target_phrases:
                 if x in content:
                     increment += 1
+            
+            if random.randint(0, 100) > 90:
+                increment += 1
 
             has_role = is_user_spooky(message.author)
             # double points
             if has_role:
                 increment = increment * 2
 
+            if self.is_feature_unlocked("spookysaturday"):
+                # spooky saturday
+                if datetime.datetime.today().weekday() == 5:
+                    increment = increment * 5
+
             user_id = message.author.id
             # would all these writes cause slowdown, idk, idc
             await self.update_user(user_id, increment, None)
     
     # cheat commands
+    @commands.command("cheat_checkfeatures", hidden=True)
+    @commands.guild_only()
+    async def cheat_ghoultokens(self, ctx, user: discord.User, delta_ghoultokens: int):
+        """
+        Check features unlocked
+        """
+        if ctx.author.id in lazy_admins:
+            msg = ""
+            for feature in store:
+                msg += f"{feature} - {self.is_feature_unlocked(feature)}\n"
+            await ctx.send(msg)
+
     @commands.command("cheat_ghoultokens", hidden=True)
     @commands.guild_only()
     async def cheat_ghoultokens(self, ctx, user: discord.User, delta_ghoultokens: int):
@@ -367,9 +409,9 @@ class SpookyMonth(commands.Cog):
         View server rankings ordered by GHOUL TOKENS.
         """
 
-        if random.randint(0, 30) == 2:
-            await self.friendlyboard(ctx)
-            return
+        # if random.randint(0, 30) == 2:
+        #     await self.friendlyboard(ctx)
+        #     return
 
         # ordered by ghoultokens
         # values are [ (index, (user_id, User))]
@@ -411,6 +453,9 @@ class SpookyMonth(commands.Cog):
         """
         spookyboard but for friendship points
         """
+        if not self.is_feature_unlocked("friendship"):
+            return
+
         spooky_ppl = sorted(self.state.users.items(), key=lambda x: x[1].friendshippoints, reverse=True)[:10]
 
         leaderboard_embed = discord.Embed()
@@ -639,6 +684,9 @@ class SpookyMonth(commands.Cog):
         """
         Gambling!!
         """
+        if not self.is_feature_unlocked("gambling2"):
+            return
+
         wager_scary_cash = 5
         remaining_supply = self.determine_remaining_scary_cash_supply()
 
@@ -754,7 +802,13 @@ class SpookyMonth(commands.Cog):
         if value < -0.5:
             return value
 
-        value += (0.01 * random.randint(0, 100))
+        value += (0.0001 * random.randint(0, 100))
+
+        if time.hour % 7 == 0:
+            value = math.floor(value)
+
+        if time.hour % 8 == 0:
+            value = math.ceil(value)
 
         return max(0.39, value)
     
@@ -834,9 +888,11 @@ class SpookyMonth(commands.Cog):
         """
         Sell an amount of Ghoul Tokens to buy Skele Coin at the current rate.
         """
-        if is_market_closed():
-            await ctx.send(get_market_closed_message())
-            return
+
+        if not self.is_feature_unlocked("primetrading"):
+            if is_market_closed():
+                await ctx.send(get_market_closed_message())
+                return
 
         if amount < -2:
             return
@@ -1154,6 +1210,76 @@ class SpookyMonth(commands.Cog):
             await ctx.send(f"Prest-o! Change-o! Here's your new nickname. In case it got truncated it was: `{new_nickname}` {get_sendoff()}")
         else:
             await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
+
+    @commands.command("feature_store", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def feature_store(self, ctx):
+        """
+        Lists the features available for purchase.
+        """
+        # too lazy for an embed
+        msg = "**Feature Store**\n"
+
+        for feature_name, (price, currency, description) in store:
+            if self.is_feature_unlocked(feature_name):
+                msg += "**Unlocked** "
+            msg += f"`{feature_name}` **{price} {currency}**: {description}\n"
+        
+        await ctx.send(msg)
+
+    @commands.command("buy_feature", hidden=True)
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def buy_feature(self, ctx, feature_name: str):
+        """
+        Buys a feature.
+        """
+        user_id = ctx.author.id
+
+        feature_name = feature_name.lower()
+
+        if self.is_feature_unlocked(feature_name):
+            await ctx.send("This feature is already unlocked.")
+            return
+
+        (feature_price, feature_currency, feature_description) = store[feature_name]
+
+        result = False
+
+        if feature_currency == "skelecoin":
+            result = await self.try_transact(user_id=user_id, skelecoin=feature_price)
+        
+        if feature_currency == "ghoultokens":
+            result = await self.try_transact(user_id=user_id, ghoultoken=feature_price)
+
+        if result:
+            await ctx.send(f"You spent {feature_price} {feature_currency} to unlock the feature `{feature_name}`: {feature_description}.")
+            await self.unlock_feature_async(feature_name, user_id)
+        else:
+            await ctx.send("Insufficient funds.")
+        
+
+    
+    async def try_transact(self, user_id, ghoultoken=None, skelecoin=None):
+        """
+        Returns TRUE if the transaction went through, otherwise FALSE.
+        Charges the user and updates balance.
+        """
+        user = await self.get_user(user_id)
+
+        # check balance
+
+        if ghoultoken is not None:
+            if user.ghoultokens < ghoultoken:
+                return False
+
+        if skelecoin is not None:
+            if user.skelecoin < skelecoin:
+                return False
+
+        await self.update_user(user_id, delta_ghoultokens=-ghoultoken, delta_skelecoin=-skelecoin)
+        return True
 
     @commands.command("scary_garden", hidden=True)
     @commands.guild_only()
