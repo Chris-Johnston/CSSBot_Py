@@ -1222,7 +1222,8 @@ class SpookyMonth(commands.Cog):
         # too lazy for an embed
         msg = "**Feature Store**\n"
 
-        for feature_name, (price, currency, description) in store:
+        for feature_name, value in store:
+            (price, currency, description) = value
             if self.is_feature_unlocked(feature_name):
                 msg += "**Unlocked** "
             msg += f"`{feature_name}` **{price} {currency}**: {description}\n"
