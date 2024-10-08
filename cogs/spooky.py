@@ -356,7 +356,7 @@ class SpookyMonth(commands.Cog):
     # cheat commands
     @commands.command("cheat_checkfeatures", hidden=True)
     @commands.guild_only()
-    async def cheat_checkfeatures(self, ctx, user: discord.User, delta_ghoultokens: int):
+    async def cheat_checkfeatures(self, ctx):
         """
         Check features unlocked
         """
