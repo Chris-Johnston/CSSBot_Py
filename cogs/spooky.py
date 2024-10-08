@@ -85,6 +85,9 @@ class State(JSONWizard):
     # key by feature, value is user id who purchased its
     unlockedfeatures: dict
 
+    # additions to this state should be made to the json first, otherwise will result in
+    # serialization breaking everything
+
     # def to_json_actual(self):
     #     return json.dumps({
     #         "last_updated": self.last_updated,
@@ -1261,10 +1264,10 @@ class SpookyMonth(commands.Cog):
         if result:
             await ctx.send(f"You spent {feature_price} {feature_currency} to unlock the feature `{feature_name}`: {feature_description}.")
             await self.unlock_feature_async(feature_name, user_id)
+
+            await self.update_user(user_id, delta_friendship_points=750)
         else:
             await ctx.send("Insufficient funds.")
-        
-
     
     async def try_transact(self, user_id, ghoultoken=None, skelecoin=None):
         """
