@@ -1398,10 +1398,14 @@ class SpookyMonth(commands.Cog):
         if ghoultoken is not None:
             if user.ghoultokens < ghoultoken:
                 return False
+        else:
+            ghoultoken = 0
 
         if skelecoin is not None:
             if user.skelecoin < skelecoin:
                 return False
+        else:
+            skelecoin = 0
 
         await self.update_user(user_id, delta_ghoultokens=-ghoultoken, delta_skelecoin=-skelecoin)
         return True
