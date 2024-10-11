@@ -640,6 +640,31 @@ class SpookyMonth(commands.Cog):
                 await self.update_user(recipient.id, delta_skelecoin=(amount), delta_friendship_points=1)
                 await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
+    @commands.command(name="free_skelecoin")
+    @commands.guild_only()
+    @commands.cooldown(1, 6000, commands.BucketType.user)
+    async def send_skelecoin(self, ctx, recipient: discord.Member):
+        """
+        Send someone else free SKELE COIN!!! (Once every 6000 seconds)
+        """
+
+        if not self.is_feature_unlocked("free_skelecoin"):
+            await ctx.send("You haven't unlocked this feature yet.")
+            return
+
+        if ctx.author.id == recipient.id:
+            await ctx.send("no.")
+            return
+
+        amount = random.randint(1, 256)
+
+        await self.update_user(ctx.author.id, delta_friendship_points=1)
+        await self.update_user(recipient.id, delta_skelecoin=(amount))
+
+        exclaim = random.randint(1, 20) * '!'
+
+        await ctx.send(f"<@{ctx.author.id}> sent <@{recipient.id}> {amount} FREE SKELE COIN{exclaim}")
+
     @commands.command(name="send_scary_cash")
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
@@ -1259,6 +1284,8 @@ class SpookyMonth(commands.Cog):
         additional_items = {
             "friendship": {
                 ":scopecreep:", (100, "skelecoin", ":scopecreep:"),
+
+                ">>free_skelecoin", (419, "ghoultokens", "Enables `>>free_skelecoin`.")
             },
 
             ":scopecreep:" : {
