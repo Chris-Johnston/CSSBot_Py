@@ -62,7 +62,9 @@ store = {
 
     "friendship": (999, "skelecoin", "Unlocks friendship."),
 
-    "gambling2": (2500, "ghoultokens", "Unlocks GAMBLING 2.")
+    "gambling2": (2500, "ghoultokens", "Unlocks GAMBLING 2."),
+
+    "cheaper_stonkchart": (1337, "ghoultokens", "Reduces the cost of `>>stonkchart` to 5 SKELE COIN.")
 }
 
 @dataclass
@@ -751,22 +753,29 @@ class SpookyMonth(commands.Cog):
         (COSTS 500 SKELE COIN) View Ghoul Token / Skele-Coin conversion rate as a graph.
         """
 
-        # TODO: pay an absurd amount of money in order to game the system and look ahead in time
-
         user_id = ctx.author.id
         user = await self.get_user(user_id)
 
-        if user.skelecoin < 500:
+        price = 500
+
+        if self.is_feature_unlocked("cheaper_stonkchart"):
+            price = 5
+
+        if user.skelecoin < price:
             await ctx.send("You do not have enough SKELE COIN.")
             return
         
-        await self.update_user(user_id, delta_skelecoin=-500, delta_friendship_points=1)
+        await self.update_user(user_id, delta_skelecoin=-price, delta_friendship_points=1)
 
         self.generate_image(False, 24)
 
         f = discord.File(open('spookystonks.png', 'rb'))
 
-        await ctx.send("hey so this code was really annoying to write and it's still not good so I'm charging you 500 SKELE COIN. No refunds.", file=f)
+        if self.is_feature_unlocked("cheaper_stonkchart"):
+            await ctx.send("Because `cheaper_stonkchart` was unlocked, this only costs 5 SKELE COIN now.", file=f)
+
+        else:
+            await ctx.send("hey so this code was really annoying to write and it's still not good so I'm charging you 500 SKELE COIN. No refunds.", file=f)
 
     @commands.command("insider_trading", hidden=True)
     @commands.cooldown(1, 600, commands.BucketType.guild)
@@ -1131,10 +1140,11 @@ class SpookyMonth(commands.Cog):
         if not(is_spooky):
             await ctx.send(f"Nah, not spooky enough 4 me")
             return
-        
-        if not is_market_closed():
-            await ctx.send("The market is open right now, so you can't do that currently.")
-            return
+
+        if not self.is_feature_unlocked("primetrading"):
+            if not is_market_closed():
+                await ctx.send("The market is open right now, so you can't do that currently.")
+                return
         
         user = await self.get_user(user_id)
         
