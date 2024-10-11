@@ -367,9 +367,21 @@ class SpookyMonth(commands.Cog):
         """
         if ctx.author.id in lazy_admins:
             msg = ""
-            for feature in store:
+            for feature in self.get_shop_items():
                 msg += f"{feature} - {self.is_feature_unlocked(feature)}\n"
             await ctx.send(msg)
+
+    # @commands.command("cheat_checkmilestones", hidden=True)
+    # @commands.guild_only()
+    # async def cheat_checkfeatures(self, ctx):
+    #     """
+    #     Check milestones
+    #     """
+    #     if ctx.author.id in lazy_admins:
+    #         msg = ""
+    #         for feature in self.get_shop_items():
+    #             msg += f"{feature} - {self.is_feature_unlocked(feature)}\n"
+    #         await ctx.send(msg)
 
     @commands.command("cheat_ghoultokens", hidden=True)
     @commands.guild_only()
@@ -1225,18 +1237,86 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
 
+    def get_shop_items(self):
+        """
+        """
+
+        # key is the feature which unlocks the items, value is a list of the items added
+        # where each index is (feature_name, (feature attributes list))
+
+        #         store = {
+        #     # key is feature name, value is tuple of price, currency, and description text
+        #     "primetrading": (12500, "skelecoin", "Enables trading during prime minutes."),
+
+        #     "spookysaturday": (1000, "ghoultokens", "All GHOUL TOKENS earned on Saturdays are multiplied 5x. Does not apply to the STONK market."),
+
+        #     "friendship": (999, "skelecoin", "Unlocks friendship."),
+
+        #     "gambling2": (2500, "ghoultokens", "Unlocks GAMBLING 2."),
+
+        #     "cheaper_stonkchart": (1337, "ghoultokens", "Reduces the cost of `>>stonkchart` to 5 SKELE COIN.")
+        # }
+        additional_items = {
+            "friendship": {
+                ":scopecreep:", (100, "skelecoin", ":scopecreep:"),
+            },
+
+            ":scopecreep:" : {
+                "scopecreep2": (1000, "skelecoin", "Scope creep 2."),
+            },
+
+            "scopecreep2" : {
+                "scopecreep3": (10000, "skelecoin", "Scope creep 3."),
+            },
+
+            "scopecreep3" : {
+                "scopecreepN": (100000, "skelecoin", "Scope creep N."),
+            },
+
+            "scopecreepN" : {
+                "scopecreepN+1": (100001, "skelecoin", "Scope creep N+1."),
+            },
+
+            "scopecreepN+1" : {
+                "hasthisjokeoverstayeditswelcomeyet": (1, "skelecoin", "because I'm starting to think so"),
+            },
+
+            "hasthisjokeoverstayeditswelcomeyet" : {
+                "orshouldIkeepgoing": (2, "skelecoin", "?"),
+            },
+
+            "orshouldIkeepgoing" : {
+                "hmm": (3, "skelecoin", ""),
+            },
+
+            "hmm" : {
+                "scopecreep∞": (99999999999999, "skelecoin", "you'll get there eventually"),
+            },
+        }
+
+        # for every feature unlocked, add the keys and values from the sub directories to the shop
+        combined_shop = store
+
+        for feature in self.state.unlockedfeatures:
+            if feature in additional_items:
+                additional_shop_items = additional_items[feature]
+                combined_shop.update(additional_shop_items)
+            #combined_shop.update(additional_items[])
+
+        return combined_shop
+
     @commands.command("feature_store", hidden=True)
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
     async def feature_store(self, ctx):
         """
-        Lists the features available for purchase.
+        Lists the features available for purchase via the >>buy_feature command.
         """
         # too lazy for an embed
         msg = "**Feature Store**\n"
 
-        for feature_name in store:
-            value = store[feature_name]
+        for feature_name in self.get_shop_items():
+            value = self.get_shop_items()[feature_name]
             (price, currency, description) = value
             if self.is_feature_unlocked(feature_name):
                 msg += "**Unlocked** "
@@ -1261,7 +1341,7 @@ class SpookyMonth(commands.Cog):
             await ctx.send("This feature is already unlocked.")
             return
 
-        (feature_price, feature_currency, feature_description) = store[feature_name]
+        (feature_price, feature_currency, feature_description) = self.get_shop_items()[feature_name]
 
         result = False
 
