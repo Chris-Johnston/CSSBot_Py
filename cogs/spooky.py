@@ -1283,9 +1283,9 @@ class SpookyMonth(commands.Cog):
         # }
         additional_items = {
             "friendship": {
-                ":scopecreep:", (100, "skelecoin", ":scopecreep:"),
+                ":scopecreep:": (100, "skelecoin", ":scopecreep:"),
 
-                ">>free_skelecoin", (419, "ghoultokens", "Enables `>>free_skelecoin`.")
+                ">>free_skelecoin": (419, "ghoultokens", "Enables `>>free_skelecoin`.")
             },
 
             ":scopecreep:" : {
