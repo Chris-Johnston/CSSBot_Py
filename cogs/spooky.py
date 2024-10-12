@@ -648,7 +648,7 @@ class SpookyMonth(commands.Cog):
         Send someone else free SKELE COIN!!! (Once every 6000 seconds)
         """
 
-        if not self.is_feature_unlocked("free_skelecoin"):
+        if not self.is_feature_unlocked(">>free_skelecoin"):
             await ctx.send("You haven't unlocked this feature yet.")
             return
 
