@@ -840,9 +840,11 @@ class SpookyMonth(commands.Cog):
         await ctx.send(f"server time is {datetime.datetime.now()} btw", file=f)
 
     def get_value(self, time: datetime.datetime):
-        if time.day in [5, 11, 16, 21, 24, 29]:
-            # maybe take the day off?
-            return 4
+
+        if not self.is_feature_unlocked("grindsetneverends"):
+            if time.day in [5, 11, 16, 21, 24, 29]:
+                # maybe take the day off?
+                return 4
 
         # the returned value is the conversion rate between the types of coins
         # or 1 ghoul token = value skele coins
@@ -1294,6 +1296,8 @@ class SpookyMonth(commands.Cog):
 
             "scopecreep2" : {
                 "scopecreep3": (10000, "skelecoin", "Scope creep 3."),
+
+                "grindsetneverends": (5000, "ghoultokens", "don't freeze the stonk market on certain days")
             },
 
             "scopecreep3" : {
