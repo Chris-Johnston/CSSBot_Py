@@ -1049,7 +1049,7 @@ class SpookyMonth(commands.Cog):
         spent_ghoul_token = amount_ghoul_token - remaining_ghoul_token
         await self.update_user(user_id, delta_ghoultokens=-spent_ghoul_token, delta_scary_cash=amount_purchased)
         
-        msg = f"Exchanged {spent_ghoul_token} GHOUL TOKEN for ${amount_purchased} SCARY CASH. There is {(remaining_supply - amount_purchased) / scary_cash_total_supply:.0%}% SCARY CASH remaining in the bank."
+        msg = f"Exchanged {spent_ghoul_token} GHOUL TOKEN for ${amount_purchased} SCARY CASH. There is {(remaining_supply - amount_purchased) / scary_cash_total_supply:.0%} SCARY CASH remaining in the bank."
         await ctx.send(msg)
     
     def get_scary_cash_exchange_rate(self):
@@ -1385,7 +1385,7 @@ class SpookyMonth(commands.Cog):
             result = await self.try_transact(user_id=user_id, ghoultoken=feature_price)
 
         if result:
-            await ctx.send(f"You spent {feature_price} {feature_currency} to unlock the feature `{feature_name}`: {feature_description}.")
+            await ctx.send(f"You spent {feature_price} {feature_currency} to unlock the feature `{feature_name}`: {feature_description}")
             await self.unlock_feature_async(feature_name, user_id)
 
             await self.update_user(user_id, delta_friendship_points=750)
