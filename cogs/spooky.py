@@ -173,6 +173,7 @@ class SpookyMonth(commands.Cog):
     def __init__(self, bot):
 
         now = datetime.datetime.now()
+        self.start_time = now
         allow_spooky = True
 
         if now.month != 10:
@@ -966,9 +967,10 @@ class SpookyMonth(commands.Cog):
         """
         Sell an amount of Skele Coin to buy Ghoul Token at the current rate.
         """
-        if is_market_closed():
-            await ctx.send(get_market_closed_message())
-            return
+        if not self.is_feature_unlocked("primetrading"):
+            if is_market_closed():
+                await ctx.send(get_market_closed_message())
+                return
 
         if amount < -2:
             return
