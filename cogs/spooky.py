@@ -1362,11 +1362,11 @@ class SpookyMonth(commands.Cog):
     @commands.cooldown(5, 60, commands.BucketType.user)
     async def buy_feature(self, ctx, feature_name: str):
         """
-        Buys a feature.
+        Buys a feature. (case sensitive)
         """
         user_id = ctx.author.id
 
-        feature_name = feature_name.lower()
+        # feature_name = feature_name.lower()
 
         if self.is_feature_unlocked(feature_name):
             await ctx.send("This feature is already unlocked.")
