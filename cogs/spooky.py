@@ -573,7 +573,7 @@ class SpookyMonth(commands.Cog):
     @commands.command("unspooky")
     @commands.guild_only()
     @commands.cooldown(3, 60, commands.BucketType.user)
-    async def skeleton(self, ctx):
+    async def unspooky(self, ctx):
         """
         This only works if you aren't spooky.
         """
