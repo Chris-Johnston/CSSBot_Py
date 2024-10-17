@@ -1359,6 +1359,46 @@ class SpookyMonth(commands.Cog):
         
         await ctx.send(msg)
 
+    @commands.command("secret_help")
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def secret_help(self, ctx):
+        """
+        >>help, but for commands that aren't part of >>help, but only tells you about one of the randomly. (costs 3 SKELE COIN)
+        """
+        if not self.is_feature_unlocked("hmm"):
+            await ctx.send("This requires the `hmm` feature to be unlocked first. Keep checking the feature store.")
+            return
+
+        user_id = ctx.author.id
+        result = await self.try_transact(user_id=user_id, skelecoin=3)
+
+        if not result:
+            await ctx.send("Sorry but you don't have enough SKELE COIN for this.")
+            return
+
+        secret_commands = [
+            "buy_feature",
+            "scary_garden",
+            "feature_store",
+            "helphelphelphelphelphelphelphelphelphelphelp",
+            "millionaire",
+            "billionaire",
+            "buy_art",
+            "secret",
+            "buy_scary_cash",
+            "scary_cash",
+            "insider_trading",
+            "stonkchart",
+            "gambling!!",
+            "gambling!",
+            "friendlyboard",
+        ]
+
+        command = random.choice(secret_commands)
+        msg = f"you may already know about this but try out `>>help {command}`"
+        await ctx.send(msg)
+
     @commands.command("buy_feature", hidden=True)
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
