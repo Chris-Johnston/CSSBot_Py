@@ -1389,39 +1389,39 @@ class SpookyMonth(commands.Cog):
             },
 
             "compound_interest": {
-                "compound_interest_2": (5_000, "ghoultokens", "Changes the interest rate"),
+                "compound_interest_2": (5_0000, "ghoultokens", "Changes the interest rate"),
             },
 
             "compound_interest_2": {
-                "compound_interest_3": (10_000, "ghoultokens", "Changes the interest rate... again"),
+                "compound_interest_3": (10_0000, "ghoultokens", "Changes the interest rate... again"),
             },
 
             "compound_interest_3": {
-                "compound_interest_4": (150_000, "ghoultokens", "Changes the interest rate... again!"),
+                "compound_interest_4": (150_0000, "ghoultokens", "Changes the interest rate... again!"),
             },
 
             "compound_interest_4": {
-                "compound_interest_5": (250_000, "ghoultokens", "Changes... again!"),
+                "compound_interest_5": (250_0000, "ghoultokens", "Changes... again!"),
             },
 
             "compound_interest_5": {
-                "compound_interest_6": (750_000, "ghoultokens", "Again! Again!"),
+                "compound_interest_6": (750_0000, "ghoultokens", "Again! Again!"),
             },
 
             "compound_interest_6": {
-                "compound_interest_7": (1_000_000, "ghoultokens", "Again! Again! Again!"),
+                "compound_interest_7": (1_000_0000, "ghoultokens", "Again! Again! Again!"),
             },
 
             "compound_interest_7": {
-                "compound_interest_8": (5_000_000, "ghoultokens", "Again! Again! Again! Again!"),
+                "compound_interest_8": (5_000_0000, "ghoultokens", "Again! Again! Again! Again!"),
             },
 
             "compound_interest_8": {
-                "compound_interest_8.5": (10_000_000, "ghoultokens", "Again! Again! Again!"),
+                "compound_interest_8.5": (10_000_0000, "ghoultokens", "Again! Again! Again!"),
             },
 
             "compound_interest_8.5": {
-                "compound_interest_9": (420_000_000, "ghoultokens", "Again! Again!"),
+                "compound_interest_9": (420_000_0000, "ghoultokens", "Again! Again!"),
             },
 
         }
