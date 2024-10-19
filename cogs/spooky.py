@@ -64,8 +64,17 @@ store = {
 
     "gambling2": (2500, "ghoultokens", "Unlocks GAMBLING 2."),
 
-    "cheaper_stonkchart": (1337, "ghoultokens", "Reduces the cost of `>>stonkchart` to 5 SKELE COIN.")
+    "cheaper_stonkchart": (1337, "ghoultokens", "Reduces the cost of `>>stonkchart` to 5 SKELE COIN."),
+
+    "compound_interest": (500000, "ghoultokens", "Unlocks >>compound_interest")
 }
+
+milestones = [
+    # 5 users > 1 million
+    "millionaireclub",
+    # gdp > 10k
+    "10thousandairegdp"
+]
 
 @dataclass
 class User(JSONWizard):
@@ -220,6 +229,8 @@ class SpookyMonth(commands.Cog):
             self.nickname_fmt_strings = n.read().splitlines()
 
         logger.info("spooky module is up")
+
+        self.compound_interest_used = False
     
     def is_feature_unlocked(self, feature: str) -> bool:
         return feature in self.state.unlockedfeatures
@@ -504,6 +515,57 @@ class SpookyMonth(commands.Cog):
         
         leaderboard_embed.description = message
         await ctx.send("Maybe the real horrors were the friends we made along the way 🙂", embed=leaderboard_embed)
+
+    @commands.command("compound_interest")
+    @commands.guild_only()
+    @commands.cooldown(5, 60, commands.BucketType.user)
+    async def compound_interest(self, ctx):
+        """
+        Collects compound interest on everyone's GHOUL TOKEN balance.
+        """
+
+        if not self.is_feature_unlocked("compound_interest"):
+            await ctx.send("You haven't unlocked this feature yet.")
+            return
+
+        if self.compound_interest_used:
+            await ctx.send("You can only use this once per day, or whenever the server restarts")
+            return
+
+        interest_rate = 0.035
+
+        # 5% -> 0% -> 15% -> rand() -> -5% -> 100% -> 100000% -> 1337420%
+
+        if self.is_feature_unlocked("compound_interest_2"):
+            interest_rate = 0.05
+        if self.is_feature_unlocked("compound_interest_3"):
+            interest_rate = 0
+        if self.is_feature_unlocked("compound_interest_4"):
+            interest_rate = 0.15
+        if self.is_feature_unlocked("compound_interest_5"):
+            interest_rate = random.randint(0, 1) / 100
+        if self.is_feature_unlocked("compound_interest_6"):
+            interest_rate = -0.05
+        if self.is_feature_unlocked("compound_interest_7"):
+            interest_rate = 1
+        if self.is_feature_unlocked("compound_interest_8"):
+            interest_rate = 10
+        if self.is_feature_unlocked("compound_interest_8.5"):
+            interest_rate = 100
+        if self.is_feature_unlocked("compound_interest_9"):
+            interest_rate = 13374.20
+
+        for k, v in self.state.users.items():
+            user_id = int(k)
+
+            delta_ghoultokens = v.ghoultokens * interest_rate
+            self.update_user(user_id, delta_ghoultokens=delta_ghoultokens)
+
+        self.compound_interest_used = True
+
+        msg = f"Interest has been collected at a rate of {interest_rate:%}"
+        await ctx.send(msg)
+
 
     @commands.command("balance")
     @commands.guild_only()
@@ -1325,6 +1387,43 @@ class SpookyMonth(commands.Cog):
             "hmm" : {
                 "scopecreep∞": (99999999999999, "skelecoin", "you'll get there eventually"),
             },
+
+            "compound_interest": {
+                "compound_interest_2": (5_000, "ghoultokens", "Changes the interest rate"),
+            },
+
+            "compound_interest_2": {
+                "compound_interest_3": (10_000, "ghoultokens", "Changes the interest rate... again"),
+            },
+
+            "compound_interest_3": {
+                "compound_interest_4": (150_000, "ghoultokens", "Changes the interest rate... again!"),
+            },
+
+            "compound_interest_4": {
+                "compound_interest_5": (250_000, "ghoultokens", "Changes... again!"),
+            },
+
+            "compound_interest_5": {
+                "compound_interest_6": (750_000, "ghoultokens", "Again! Again!"),
+            },
+
+            "compound_interest_6": {
+                "compound_interest_7": (1_000_000, "ghoultokens", "Again! Again! Again!"),
+            },
+
+            "compound_interest_7": {
+                "compound_interest_8": (5_000_000, "ghoultokens", "Again! Again! Again! Again!"),
+            },
+
+            "compound_interest_8": {
+                "compound_interest_8.5": (10_000_000, "ghoultokens", "Again! Again! Again!"),
+            },
+
+            "compound_interest_8.5": {
+                "compound_interest_9": (420_000_000, "ghoultokens", "Again! Again!"),
+            },
+
         }
 
         # for every feature unlocked, add the keys and values from the sub directories to the shop
