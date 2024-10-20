@@ -678,10 +678,12 @@ class SpookyMonth(commands.Cog):
     @commands.command(name="send_skelecoin", aliases=["send_sc", "send_skelecoins"])
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
-    async def send_skelecoins(self, ctx, recipient: discord.Member, amount: int):
+    async def send_skelecoins(self, ctx, recipient: discord.Member, amount):
         """
         Send someone some skele coin
         """
+        amount = int(amount) # does that fix it?
+
         if amount < 0:
             await ctx.send("If you send me 5,000,001 skele coin I will let you do this. Once. I am serious.")
         elif amount == 0:
@@ -731,7 +733,7 @@ class SpookyMonth(commands.Cog):
     @commands.command(name="send_scary_cash")
     @commands.guild_only()
     @commands.cooldown(5, 60, commands.BucketType.user)
-    async def send_ghoultokens(self, ctx, recipient: discord.Member, amount_scary_cash: int):
+    async def send_scary_cash(self, ctx, recipient: discord.Member, amount_scary_cash: int):
         """
         Send someone some SCARY CASH.
         """
