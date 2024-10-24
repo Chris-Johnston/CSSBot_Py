@@ -1449,14 +1449,22 @@ class SpookyMonth(commands.Cog):
         # too lazy for an embed
         msg = "**Feature Store**\n"
 
+        has_items = False
+
         for feature_name in self.get_shop_items():
             value = self.get_shop_items()[feature_name]
             (price, currency, description) = value
             if self.is_feature_unlocked(feature_name):
-                msg += "**Unlocked** "
+                # msg += "**Unlocked** "
+                continue
             msg += f"`{feature_name}` **{price} {currency}**: {description}\n"
 
+            has_items = True
+
         msg += "\nYou can buy these using `>>buy_feature`"
+
+        if not has_items:
+            msg = "You've bought everything. Good job!"
         
         await ctx.send(msg)
 
