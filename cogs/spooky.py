@@ -1142,15 +1142,20 @@ class SpookyMonth(commands.Cog):
         )
 
     async def battle_loss(self, ctx, loser, winner, outcome_message):
+        """
+        When the player loses an attack, 50% of their currency is transferred to the defender.
+        """
         loss = int(
             0.5 * (loser.ghoultokens if loser.side == "ghouls" else loser.skelecoin)
         )
         if loser.side == "ghouls":
             loser.ghoultokens -= loss
+            winner.ghoultokens += loss  # Add loss to the winner
         else:
             loser.skelecoin -= loss
+            winner.skelecoin += loss  # Add loss to the winner
         await ctx.send(
-            f"{outcome_message} {loser.side.capitalize()} loses the battle and forfeits {loss} currency."
+            f"{outcome_message} {loser.side.capitalize()} loses the battle and forfeits {loss} currency to {winner.side.capitalize()}."
         )
 
 
