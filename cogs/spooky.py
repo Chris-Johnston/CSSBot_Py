@@ -423,29 +423,40 @@ class SpookyMonth(commands.Cog):
     async def on_message(self, message):
         """
         Checks for the spooky stuff in a message
+        this piece of sh***
         """
-        if message.guild is None:
+        if message.guild is None or message.author.bot:
             return
 
-        if message is not None and message is not None:
-            content = message.content.lower()
-            # increment once per phrase, not each time in a message
-            increment = 0
-            if self.bonus_phrase in content:
-                increment += 5
+        if message.content.startswith(">>"):  ## incrementing for no reason
+            return
 
-            for x in self.target_phrases:
-                if x in content:
-                    increment += 1
+        if message.content.startswith(self.bot.command_prefix):
+            return
 
-            has_role = is_user_spooky(message.author)
-            # double points
-            if has_role:
-                increment = increment * 2
+        # Ignore messages sent by bots
+        if message.author.bot:
+            return
 
-            user_id = message.author.id
-            # would all these writes cause slowdown, idk, idc
-            await self.update_user(user_id, increment, None)
+        content = message.content.lower()
+        # increment once per phrase, not each time in a message
+        increment = 0
+        if self.bonus_phrase in content:
+            increment += 5
+
+        for x in self.target_phrases:
+            if x in content:
+                increment += 1
+
+        has_role = is_user_spooky(message.author)
+        # double points
+        if has_role:
+            increment = increment * 2
+
+        user_id = message.author.id
+        # would all these writes cause slowdown, idk, idc
+        # print("Incrementing ghoul tokens!" + str(increment))
+        await self.update_user(user_id, delta_ghoultokens=increment)
 
     # cheat commands
     @commands.command("cheat_ghoultokens")
