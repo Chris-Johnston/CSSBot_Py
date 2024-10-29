@@ -1109,10 +1109,6 @@ class SpookyMonth(commands.Cog):
     async def battle(self, ctx, target: discord.User):
         """
         Initiates a battle between the command issuer (attacker) and the target user (defender).
-
-        Args:
-            ctx: Discord command context for the message author initiating the battle.
-            target (discord.User): The user to battle against.
         """
         # Check if the target user is valid
         if target is None or not isinstance(target, discord.User):
@@ -1129,34 +1125,33 @@ class SpookyMonth(commands.Cog):
             return
 
         # Determine if any special units are involved
-        attacker_has_beanglove = "beanglove" in attacker.units
-        defender_has_beanglove = "beanglove" in defender.units
-        attacker_has_brendan = "brendan_fraser" in attacker.units
-        defender_has_brendan = "brendan_fraser" in defender.units
+        special_units = ["beanglove", "brendan fraser"]
+        has_special_unit = any(
+            unit in attacker.units or unit in defender.units for unit in special_units
+        )
 
-        # Choose the appropriate battle outcome file and keyword based on sides and special units
+        # Load the appropriate outcome file based on the attacker's side
         outcome_file = (
             "battle_outcomes_skeleton.txt"
             if attacker.side == "skeletons"
             else "battle_outcomes_ghoul.txt"
         )
-        special_keyword = None
-        if attacker_has_beanglove or defender_has_beanglove:
-            special_keyword = "bean"
-        elif attacker_has_brendan or defender_has_brendan:
-            special_keyword = "brendan"
+        outcome_messages = self.load_battle_outcomes(outcome_file)
 
-        # Load outcome messages based on the keyword if a special unit is involved
-        if special_keyword:
-            outcome_messages = self.load_battle_outcomes(
-                outcome_file, keyword=special_keyword
-            )
-        else:
-            outcome_messages = self.load_battle_outcomes(outcome_file)
+        # Filter out messages containing special unit names if special units are present
+        if has_special_unit:
+            special_keywords = [
+                unit.split()[0] for unit in special_units
+            ]  # E.g., "bean" for "beanglove"
+            outcome_messages = [
+                msg
+                for msg in outcome_messages
+                if not any(keyword in msg.lower() for keyword in special_keywords)
+            ]
 
+        # If no suitable outcome messages are left, fall back to all messages
         if not outcome_messages:
-            await ctx.send("The void beckons.")
-            return
+            outcome_messages = self.load_battle_outcomes(outcome_file)
 
         # Perform battle calculations
         attack_roll = attacker.get_power_level() * random.uniform(0.8, 1.2)
