@@ -9,6 +9,7 @@ import logging
 import time
 import datetime
 import uuid
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -21,19 +22,61 @@ lazy_admins = [163184946742034432, 234840886519791616]
 # harcoded because lazy
 spooky_roleid = 1158864060650106990
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
 # this did not work well for this case, would not recommend
 # from dataclasses_json import dataclass_json
 from dataclass_wizard import JSONWizard
 
+# Constants for game mechanics
+MUMMY_PARTS_SEQUENCE = ["leg", "arm", "head", "torso", "foot"]
+MUMMY_PART_COSTS = [100, 200, 300, 400, 500]
+STRUCTURE_COSTS = {
+    "command_center": 100,
+    "refinery": 50,
+    "graveyard": 75,
+    "watchtower": 150,
+}
+WATCHTOWER_POWER_BOOST = 0.01  # Boost percentage for army power level
+SKELETON_STRUCTURE_COST_MULTIPLIER = 3  # 3x cost for skeleton structures
+GHOUl_UNITS = {
+    "ghouls": {"power": 10, "cost": 20},
+    "wraiths": {"power": 20, "cost": 50},
+    "ghosts": {"power": 30, "cost": 75},
+    "zombies": {"power": 40, "cost": 100},
+    "giant ghoul": {"power": 100, "cost": 300},
+}
+SKELETON_UNITS = {
+    "skeletons": {"power": 10, "cost": 20},
+    "mummy_part": {"power": 0, "cost": MUMMY_PART_COSTS},
+    "mummy": {"power": 1000, "cost": sum(MUMMY_PART_COSTS)},
+}
+
+
 @dataclass
-class User(JSONWizard):
-    ghoultokens: int
-    skelecoin: int
+class User:
+    ghoultokens: int = 0
+    skelecoin: int = 0
+    side: str = ""
+    structures: dict = field(
+        default_factory=lambda: {
+            "command_center": False,
+            "refinery": False,
+            "graveyard": False,
+        }
+    )
+    units: dict = field(default_factory=dict)
+    mummy_parts: int = 0  # Tracks the number of mummy parts collected
+
+    def get_power_level(self):
+        return sum(
+            details["power"] * details["quantity"] for details in self.units.values()
+        )
+
 
 @dataclass
 class State(JSONWizard):
-    last_updated: int # timestamp
+    last_updated: int  # timestamp
     # keyed by userid, value is User
     users: dict
 
@@ -44,7 +87,8 @@ class State(JSONWizard):
     #         # why does python serialization suck so much
     #         "users": User.schema().dump(self.users, many=True)
     #     })
-    
+
+
 # def from_json_actual(jsonstr):
 #     j = json.loads(jsonstr)
 #     s = State(0, {})
@@ -52,16 +96,19 @@ class State(JSONWizard):
 #     s.users = User.schema().load(j['users'], many=True)
 #     return s
 
+
 def is_user_spooky(user):
     for role in user.roles:
         if role.id == spooky_roleid:
             return True
     return False
 
+
 def escape(text):
-    zero_width_space = '​'
-    text.replace('@', '@' + zero_width_space)
+    zero_width_space = "​"
+    text.replace("@", "@" + zero_width_space)
     return text
+
 
 def get_sendoff():
     adjectives = [
@@ -85,9 +132,10 @@ def get_sendoff():
         "SPOOKY",
         "BONE-CHILLING",
         "TRANSACTIONAL",
-        "${ADJECTIVE}"
+        "${ADJECTIVE}",
     ]
     return f"Have a {random.choice(adjectives)} day!"
+
 
 class SpookyMonth(commands.Cog):
     """
@@ -109,10 +157,10 @@ class SpookyMonth(commands.Cog):
                 allow_spooky = False
 
         # I'm pretty sure I restart this bot daily so this should do
-        if not(allow_spooky):
+        if not (allow_spooky):
             logger.info("date is not in spooky month range, so not running")
             return
-        
+
         # keyed by user Id, with a dict for the attributes for each user
         self.state_mutex = asyncio.Lock()
         # running an old version of python oh well
@@ -121,10 +169,10 @@ class SpookyMonth(commands.Cog):
         loops.run_until_complete(self.read_state())
         # asyncio.run(self.read_state())
 
-        with open(spooky_phrases_file, 'rt') as s:
+        with open(spooky_phrases_file, "rt") as s:
             target_phrases = s.readlines()
             self.target_phrases = [x.strip() for x in target_phrases]
-        
+
         self.bonus_phrase = random.choice(target_phrases)
         logger.info("read the phrases from the spooky phrase file")
 
@@ -138,26 +186,33 @@ class SpookyMonth(commands.Cog):
         self.stonk_weight_f = -random.randint(10, 20) / 100.0
 
         logger.info("reading names from file")
-        with open(spooky_nicknames, 'rt') as n:
+        with open(spooky_nicknames, "rt") as n:
             self.nickname_fmt_strings = n.read().splitlines()
-        
-    
+
     def get_stonk_value(self):
         # the returned value is the conversion rate between the types of coins
         # or 1 ghoul token = value skele coins
         now = datetime.datetime.now()
         t = 0.0001 - now.day * 0.2 + now.hour + now.minute / 60.0
-        value = 5.0 + self.stonk_weight_f * t + 0.5 * math.sin(self.stonk_weight_a * t) + 0.8 * math.sin(self.stonk_weight_b * t) + 0.1 * math.sin(self.stonk_weight_c * t) + 2 * math.sin(t / self.stonk_weight_d) + 2 * math.cos(t / self.stonk_weight_e)
+        value = (
+            5.0
+            + self.stonk_weight_f * t
+            + 0.5 * math.sin(self.stonk_weight_a * t)
+            + 0.8 * math.sin(self.stonk_weight_b * t)
+            + 0.1 * math.sin(self.stonk_weight_c * t)
+            + 2 * math.sin(t / self.stonk_weight_d)
+            + 2 * math.cos(t / self.stonk_weight_e)
+        )
         if value < -0.5:
             return value
         return max(0.001, value)
-    
+
     # who needs a database, json is MY database
     async def read_state(self):
         logger.info("reading state from file")
         try:
             async with self.state_mutex:
-                with open(spooky_state_file, 'rt') as s:
+                with open(spooky_state_file, "rt") as s:
                     # self.state = from_json_actual(s.read())
                     self.state = State.from_json(s.read())
 
@@ -166,9 +221,9 @@ class SpookyMonth(commands.Cog):
                     actual_state = {}
                     for k, v in self.state.users.items():
                         user_id = int(k)
-                        actual_state[user_id] = User(v['ghoultokens'], v['skelecoin'])
+                        actual_state[user_id] = User(v["ghoultokens"], v["skelecoin"])
                     self.state.users = actual_state
-                    logger.info(f'state is: {self.state}')
+                    logger.info(f"state is: {self.state}")
             logger.info("done reading state file")
         except Exception as e:
             logger.error(e)
@@ -180,16 +235,18 @@ class SpookyMonth(commands.Cog):
         logger.info("updating state")
         try:
             async with self.state_mutex:
-                with open(spooky_state_file, 'wt') as s:
+                with open(spooky_state_file, "wt") as s:
                     # json_text = self.state.to_json_actual()
                     json_text = self.state.to_json()
                     s.write(json_text)
         except Exception as e:
             logger.warn("failed to write state for some reason idk", e)
-    
+
     # the good stuff
     async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None):
-        logger.info(f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}")
+        logger.info(
+            f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}"
+        )
         if user_id in self.state.users:
             # update existing
             if delta_ghoultokens is not None:
@@ -199,10 +256,12 @@ class SpookyMonth(commands.Cog):
         else:
             # new user
             logger.info(f"new user user_id {user_id}")
-            self.state.users[user_id] = User(delta_ghoultokens or 0, delta_skelecoin or 0)
-        
+            self.state.users[user_id] = User(
+                delta_ghoultokens or 0, delta_skelecoin or 0
+            )
+
         await self.write_state()
-    
+
     async def get_user(self, user_id):
         logger.info(f"get user {user_id}")
         if user_id in self.state.users:
@@ -237,7 +296,7 @@ class SpookyMonth(commands.Cog):
             user_id = message.author.id
             # would all these writes cause slowdown, idk, idc
             await self.update_user(user_id, increment, None)
-    
+
     # cheat commands
     @commands.command("cheat_ghoultokens")
     @commands.guild_only()
@@ -247,7 +306,7 @@ class SpookyMonth(commands.Cog):
         """
         if ctx.author.id in lazy_admins:
             await self.update_user(user.id, delta_ghoultokens=delta_ghoultokens)
-    
+
     @commands.command("cheat_skelecoin")
     @commands.guild_only()
     async def cheat_skelecoin(self, ctx, user: discord.User, skelecoin: int):
@@ -264,7 +323,9 @@ class SpookyMonth(commands.Cog):
         # values are [ (index, (user_id, User))]
         # user id is x[1][0]
         # user class is x[1][1].ghoultokens
-        spooky_ppl = sorted(self.state.users.items(), key=lambda x: x[1].ghoultokens, reverse=True)[:10]
+        spooky_ppl = sorted(
+            self.state.users.items(), key=lambda x: x[1].ghoultokens, reverse=True
+        )[:10]
 
         leaderboard_embed = discord.Embed()
         leaderboard_embed.title = "Spookyboard"
@@ -284,7 +345,7 @@ class SpookyMonth(commands.Cog):
 
             # TODO different emoji if I feel like it
             message += f"**{person_ghoultokens}** - {display_name}\n"
-        
+
         leaderboard_embed.description = message
         await ctx.send("", embed=leaderboard_embed)
 
@@ -302,10 +363,14 @@ class SpookyMonth(commands.Cog):
                 msg += f"{user.ghoultokens} GHOUL TOKENS\n"
             if user.skelecoin != 0:
                 msg += f"{user.skelecoin} SKELE-COIN\n"
-            
-            if abs(user.ghoultokens) in [69, 420, 1337] or abs(user.skelecoin) in [69, 420, 1337]:
+
+            if abs(user.ghoultokens) in [69, 420, 1337] or abs(user.skelecoin) in [
+                69,
+                420,
+                1337,
+            ]:
                 msg += "nice."
-            
+
             await ctx.send(msg)
 
     @commands.command("doot")
@@ -324,8 +389,10 @@ class SpookyMonth(commands.Cog):
 
             await ctx.send("doot https://www.youtube.com/watch?v=eVrYbKBrI7o")
         else:
-            await ctx.send(f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens. {get_sendoff()}")
-    
+            await ctx.send(
+                f"Insufficient funds. You have `{user.ghoultokens}` ghoul tokens. {get_sendoff()}"
+            )
+
     @commands.command(name="send_ghoultokens", aliases=["send_gt", "send_ghoultoken"])
     @commands.guild_only()
     async def send_ghoultokens(self, ctx, recipient: discord.User, amount: int):
@@ -338,21 +405,27 @@ class SpookyMonth(commands.Cog):
             await ctx.send("that's just mean")
 
             # let this go negative, i do not care
-            await self.update_user(ctx.author.id, delta_ghoultokens=-1, delta_skelecoin=None)
+            await self.update_user(
+                ctx.author.id, delta_ghoultokens=-1, delta_skelecoin=None
+            )
         elif ctx.author.id == recipient.id:
             await ctx.send("no.")
         else:
             author_id = ctx.author.id
             user = await self.get_user(author_id)
             if user.ghoultokens >= amount:
-                await self.update_user(author_id, delta_ghoultokens=-amount, delta_skelecoin=None)
+                await self.update_user(
+                    author_id, delta_ghoultokens=-amount, delta_skelecoin=None
+                )
 
                 # fun :)
                 if random.randint(0, 10000) == 123:
                     amount *= 100
 
                 # sharing is very scary, so reward this behavior
-                await self.update_user(recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None)
+                await self.update_user(
+                    recipient.id, delta_ghoultokens=(amount + 1), delta_skelecoin=None
+                )
                 await ctx.send(f"TRANSFER COMPLETE. {get_sendoff()}")
 
     @commands.command(name="send_skelecoin", aliases=["send_sc", "send_skelecoins"])
@@ -362,7 +435,9 @@ class SpookyMonth(commands.Cog):
         Send someone some skele coin
         """
         if amount < 0:
-            await ctx.send("If you send me 5,000,001 skele coin I will let you do this. Once. I am serious.")
+            await ctx.send(
+                "If you send me 5,000,001 skele coin I will let you do this. Once. I am serious."
+            )
         elif amount == 0:
             await ctx.send(":)")
             await self.update_user(ctx.author.id, delta_skelecoin=-1)
@@ -412,8 +487,12 @@ class SpookyMonth(commands.Cog):
             await ctx.send("You do not have enough GHOUL TOKENS.")
         else:
             skelecoin = math.floor(amount * self.get_stonk_value())
-            await self.update_user(user_id, delta_ghoultokens=-amount, delta_skelecoin=skelecoin)
-            await ctx.send(f"You sold {amount} GHOUL TOKEN for {skelecoin} SKELE COIN. Have a SPOOKY day.")
+            await self.update_user(
+                user_id, delta_ghoultokens=-amount, delta_skelecoin=skelecoin
+            )
+            await ctx.send(
+                f"You sold {amount} GHOUL TOKEN for {skelecoin} SKELE COIN. Have a SPOOKY day."
+            )
 
     @commands.command("trade_sc")
     @commands.guild_only()
@@ -431,8 +510,12 @@ class SpookyMonth(commands.Cog):
             await ctx.send("You do not have enough SKELE COIN.")
         else:
             ghoultoken = math.floor(amount * (1 / self.get_stonk_value()))
-            await self.update_user(user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount)
-            await ctx.send(f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}")
+            await self.update_user(
+                user_id, delta_ghoultokens=ghoultoken, delta_skelecoin=-amount
+            )
+            await ctx.send(
+                f"You sold {amount} SKELE COIN for {ghoultoken} GHOUL TOKEN. {get_sendoff()}"
+            )
 
     @commands.command("secret")
     @commands.guild_only()
@@ -460,13 +543,21 @@ class SpookyMonth(commands.Cog):
 
         amount = 5000
         if amount > user.ghoultokens:
-            await ctx.send(f"You do not have enough GHOUL TOKEN. Come back when you have more. {get_sendoff()}")
+            await ctx.send(
+                f"You do not have enough GHOUL TOKEN. Come back when you have more. {get_sendoff()}"
+            )
         else:
-            await ctx.send(f"Wow. I can truly see that you appreciate only the finest of art. I am generating your new one-of-a-kind piece now. {get_sendoff()}")
-            await self.update_user(user_id, delta_ghoultokens=-5000, delta_skelecoin=None)
+            await ctx.send(
+                f"Wow. I can truly see that you appreciate only the finest of art. I am generating your new one-of-a-kind piece now. {get_sendoff()}"
+            )
+            await self.update_user(
+                user_id, delta_ghoultokens=-5000, delta_skelecoin=None
+            )
 
             nft = str(uuid.uuid4())
-            await ctx.send(f"<@{user_id}>, here is your exclusive and one-of-a-kind art:\n`{nft}`\nYou are now the sole owner of this string of characters forever. Good job. {get_sendoff()}")
+            await ctx.send(
+                f"<@{user_id}>, here is your exclusive and one-of-a-kind art:\n`{nft}`\nYou are now the sole owner of this string of characters forever. Good job. {get_sendoff()}"
+            )
 
     @commands.command("millionaire")
     @commands.guild_only()
@@ -474,7 +565,9 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         user = await self.get_user(user_id)
         if user.ghoultokens > 1_000_000:
-            await ctx.send("Wow good job ur a millionaire. Have some FREE +50 SKELE COIN")
+            await ctx.send(
+                "Wow good job ur a millionaire. Have some FREE +50 SKELE COIN"
+            )
             await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=50)
 
     @commands.command("billionaire")
@@ -484,9 +577,15 @@ class SpookyMonth(commands.Cog):
         user = await self.get_user(user_id)
         if user.skelecoin > 1_000_000_000:
             await ctx.send("cool, now start over.")
-            await self.update_user(user_id, delta_ghoultokens=-user.ghoultokens, delta_skelecoin=-user.skelecoin)
+            await self.update_user(
+                user_id,
+                delta_ghoultokens=-user.ghoultokens,
+                delta_skelecoin=-user.skelecoin,
+            )
         else:
-            await ctx.send("😤😤😤 The 👀 grind 🎯💰 never 😎 stops 💪 😤😤. Keep up the grind!")
+            await ctx.send(
+                "😤😤😤 The 👀 grind 🎯💰 never 😎 stops 💪 😤😤. Keep up the grind!"
+            )
 
     @commands.command("spook")
     @commands.guild_only()
@@ -503,14 +602,20 @@ class SpookyMonth(commands.Cog):
 
         if user.skelecoin > 0:
             cost = random.randint(0, 200)
-            await ctx.send(f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n<@{target_user.id}> has been spooked by <@{user_id}>!")
-            await self.update_user(user_id, delta_ghoultokens=None, delta_skelecoin=-cost)
+            await ctx.send(
+                f"SpooOOOooOOooky... You have been charged {cost} SKELE COIN\n<@{target_user.id}> has been spooked by <@{user_id}>!"
+            )
+            await self.update_user(
+                user_id, delta_ghoultokens=None, delta_skelecoin=-cost
+            )
 
             # if they already have the role too bad should have noticed
             spooky_role = ctx.guild.get_role(spooky_roleid)
             await target_user.add_roles(spooky_role)
         else:
-            await ctx.send(f"Come back again when you have some SKELE COIN. {get_sendoff()}")
+            await ctx.send(
+                f"Come back again when you have some SKELE COIN. {get_sendoff()}"
+            )
 
     @commands.command("market_manipulation")
     @commands.guild_only()
@@ -521,12 +626,14 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         is_spooky = is_user_spooky(ctx.author)
 
-        if not(is_spooky):
-            await ctx.send(f"YOU. {get_sendoff()} MUST. {get_sendoff()} BE. {get_sendoff()} SPOOKY. {get_sendoff()}")
+        if not (is_spooky):
+            await ctx.send(
+                f"YOU. {get_sendoff()} MUST. {get_sendoff()} BE. {get_sendoff()} SPOOKY. {get_sendoff()}"
+            )
             return
-        
+
         user = await self.get_user(user_id)
-        
+
         if user.skelecoin >= 50:
             await self.update_user(user_id, delta_skelecoin=-50)
 
@@ -537,10 +644,12 @@ class SpookyMonth(commands.Cog):
             self.stonk_weight_e = random.randint(1, 10)
             self.stonk_weight_f = -random.randint(10, 20) / 100.0
 
-            await ctx.send("The market variables have been randomized for now. This may or may not have done anything. Good job?")
+            await ctx.send(
+                "The market variables have been randomized for now. This may or may not have done anything. Good job?"
+            )
         else:
             await ctx.send("You don't have enough SKELE COIN for this.")
-    
+
     @commands.command("this_does_nothing")
     @commands.guild_only()
     async def this_does_nothing(self, ctx):
@@ -550,13 +659,17 @@ class SpookyMonth(commands.Cog):
         is_spooky = is_user_spooky(ctx.author)
         if not is_spooky:
             await self.update_user(ctx.author.id, delta_skelecoin=-1)
-            await ctx.send(f"This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. {get_sendoff()}")
+            await ctx.send(
+                f"This command only does nothing if you are spooky. Since you aren't spooky, I'm subtracting a single SKELE COIN. {get_sendoff()}"
+            )
 
     @commands.command(name="trade_gc", aliases=["trade_st"])
     @commands.guild_only()
     async def you_fool(self, ctx):
         await self.update_user(ctx.author.id, delta_skelecoin=-1)
-        await ctx.send(f"You fool, it's GHOUL TOKEN and SKELE COIN, not SKELE TOKEN and GHOUL COIN. I have subtracted 1 SKELE COIN from your account. {get_sendoff()}")
+        await ctx.send(
+            f"You fool, it's GHOUL TOKEN and SKELE COIN, not SKELE TOKEN and GHOUL COIN. I have subtracted 1 SKELE COIN from your account. {get_sendoff()}"
+        )
 
     @commands.command(name="helphelphelphelphelphelphelphelphelphelphelp")
     @commands.guild_only()
@@ -576,18 +689,24 @@ class SpookyMonth(commands.Cog):
         user_id = ctx.author.id
         is_spooky = is_user_spooky(ctx.author)
         if not is_spooky:
-            await ctx.send(f"Spooky users only. Come back when you are SPOOKY. {get_sendoff()}")
+            await ctx.send(
+                f"Spooky users only. Come back when you are SPOOKY. {get_sendoff()}"
+            )
             return
 
         user = await self.get_user(user_id)
         if user.skelecoin > 1000:
-            await ctx.send(f"You actually have too much SKELE COIN to use this command. Come back when you have less SKELE COIN. {get_sendoff()}")
+            await ctx.send(
+                f"You actually have too much SKELE COIN to use this command. Come back when you have less SKELE COIN. {get_sendoff()}"
+            )
             return
-        
+
         if user.ghoultokens % 3 == 0:
-            await ctx.send(f"This command only works if your number of GHOUL TOKEN is not a multiple of THREE. {get_sendoff()}")
+            await ctx.send(
+                f"This command only works if your number of GHOUL TOKEN is not a multiple of THREE. {get_sendoff()}"
+            )
             return
-        
+
         if abs(user.skelecoin) >= 100:
             await self.update_user(user_id, delta_skelecoin=-10)
 
@@ -596,9 +715,215 @@ class SpookyMonth(commands.Cog):
             new_nickname = fmt_str.format(current_nickname)
             new_nickname = escape(new_nickname)
             await ctx.author.edit(nick=new_nickname)
-            await ctx.send(f"Prest-o! Change-o! Here's your new nickname. In case it got truncated it was: `{new_nickname}` {get_sendoff()}")
+            await ctx.send(
+                f"Prest-o! Change-o! Here's your new nickname. In case it got truncated it was: `{new_nickname}` {get_sendoff()}"
+            )
         else:
-            await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
+            await ctx.send(
+                f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}"
+            )
+
+    """
+    Spooky game addition
+    """
+
+    # --- Game Commands ---
+    @commands.command("join_skeletons")
+    async def join_skeletons(self, ctx):
+        await self.join_side(ctx, "skeletons")
+
+    @commands.command("join_ghouls")
+    async def join_ghouls(self, ctx):
+        await self.join_side(ctx, "ghouls")
+
+    async def join_side(self, ctx, side):
+        user = self.get_user(ctx.author.id)
+        user.side = side
+        self.user_data[ctx.author.id] = user
+        await ctx.send(
+            f"Welcome to the {side.capitalize()}! Use `>>base` to see your structures and `>>units` to manage your army."
+        )
+
+    @commands.command("base")
+    async def base(self, ctx):
+        user = self.get_user(ctx.author.id)
+        base_info = "Your Base Structures:\n" + "\n".join(
+            f"{name.capitalize()}: {'Built' if built else 'Not Built'} (Cost: {STRUCTURE_COSTS[name]} {user.side})"
+            for name, built in user.structures.items()
+        )
+        await ctx.send(base_info)
+
+    @commands.command("units")
+    async def units(self, ctx):
+        user = self.get_user(ctx.author.id)
+        units_info = f"{ctx.author.display_name}'s Units:\n"
+        for unit, details in user.units.items():
+            units_info += f"{unit.capitalize()} - Power: {details['power']}, Quantity: {details['quantity']}\n"
+        units_info += f"Total Power Level: {user.get_power_level()}"
+
+        if user.side == "skeletons":
+            mummy_info = f"\nMummy Parts Collected: {user.mummy_parts}/{len(MUMMY_PARTS_SEQUENCE)}"
+            units_info += mummy_info
+
+        await ctx.send(units_info)
+
+    @commands.command("buy_unit")
+    async def buy_unit(self, ctx, unit_name: str):
+        user = self.get_user(ctx.author.id)
+        side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUl_UNITS
+
+        # Check if unit is available for this side
+        if unit_name not in side_units and unit_name not in STRUCTURE_COSTS:
+            await ctx.send(f"{unit_name.capitalize()} is not available for your side.")
+            return
+
+        # Handle special case for mummy parts
+        if unit_name == "mummy_part" and user.side == "skeletons":
+            await self.buy_mummy_part(ctx, user)
+            return
+        elif unit_name == "mummy" and user.side == "skeletons":
+            if user.mummy_parts < len(MUMMY_PARTS_SEQUENCE):
+                await ctx.send(
+                    "You must collect all mummy parts before assembling the mummy!"
+                )
+            else:
+                user.units["mummy"] = {"power": 1000, "quantity": 1}
+                user.mummy_parts = 0
+                await ctx.send(
+                    "The Mummy has been assembled and added to your units! Prepare for battle."
+                )
+            return
+
+        # Handle base structures like watchtower
+        if unit_name in STRUCTURE_COSTS:
+            if user.structures[unit_name]:
+                await ctx.send(f"{unit_name.capitalize()} is already built.")
+            else:
+                # Apply cost multiplier if on skeleton side
+                structure_cost = STRUCTURE_COSTS[unit_name]
+                if user.side == "skeletons":
+                    structure_cost *= SKELETON_STRUCTURE_COST_MULTIPLIER
+
+                if (
+                    user.skelecoin if user.side == "skeletons" else user.ghoultokens
+                ) >= structure_cost:
+                    # Deduct the cost and build the structure
+                    if user.side == "skeletons":
+                        user.skelecoin -= structure_cost
+                    else:
+                        user.ghoultokens -= structure_cost
+                    user.structures[unit_name] = True
+                    await ctx.send(
+                        f"{unit_name.capitalize()} built successfully! It enhances your army's power."
+                    )
+                else:
+                    await ctx.send(
+                        f"Not enough currency to build {unit_name}. Cost: {structure_cost}"
+                    )
+            return
+
+        # Handle regular unit buying
+        unit_cost = side_units[unit_name]["cost"]
+        currency = user.skelecoin if user.side == "skeletons" else user.ghoultokens
+
+        if currency >= unit_cost:
+            if user.side == "skeletons":
+                user.skelecoin -= unit_cost
+            else:
+                user.ghoultokens -= unit_cost
+            if unit_name in user.units:
+                user.units[unit_name]["quantity"] += 1
+            else:
+                user.units[unit_name] = {
+                    "power": side_units[unit_name]["power"],
+                    "quantity": 1,
+                }
+            await ctx.send(
+                f"{unit_name.capitalize()} purchased! Remaining {user.side} currency: {currency}"
+            )
+        else:
+            await ctx.send(
+                f"Not enough currency. {unit_name.capitalize()} costs {unit_cost}."
+            )
+
+    async def buy_mummy_part(self, ctx, user):
+        part_index = user.mummy_parts
+        if part_index >= len(MUMMY_PARTS_SEQUENCE):
+            await ctx.send(
+                "You have collected all the mummy parts. Use `>>buy_unit mummy` to assemble the mummy!"
+            )
+            return
+
+        part_cost = MUMMY_PART_COSTS[part_index]
+        if user.skelecoin >= part_cost:
+            user.skelecoin -= part_cost
+            user.mummy_parts += 1
+            part_name = MUMMY_PARTS_SEQUENCE[part_index]
+            await ctx.send(
+                f"Mummy part '{part_name}' purchased! Skelecoins left: {user.skelecoin}"
+            )
+            if user.mummy_parts == len(MUMMY_PARTS_SEQUENCE):
+                await ctx.send(
+                    "You have all the mummy parts! Use `>>buy_unit mummy` to assemble the mummy."
+                )
+        else:
+            await ctx.send(
+                f"Not enough Skelecoins. Mummy part '{MUMMY_PARTS_SEQUENCE[part_index]}' costs {part_cost} Skelecoins."
+            )
+
+    @commands.command("battle")
+    async def battle(self, ctx, target: discord.User):
+        attacker = self.get_user(ctx.author.id)
+        defender = self.get_user(target.id)
+
+        if attacker.side == defender.side:
+            await ctx.send("You cannot battle your own side!")
+            return
+
+        # Introduce randomness so stronger power doesn't guarantee a win
+        attack_roll = attacker.get_power_level() * random.uniform(0.8, 1.2)
+        defend_roll = defender.get_power_level() * random.uniform(0.8, 1.2)
+
+        if attack_roll > defend_roll:
+            await self.battle_victory(ctx, attacker, defender)
+        else:
+            await self.battle_loss(ctx, attacker, defender)
+
+    async def battle_victory(self, ctx, winner, loser):
+        winnings = int(
+            0.2 * (loser.ghoultokens if winner.side == "ghouls" else loser.skelecoin)
+        )
+        if winner.side == "ghouls":
+            winner.ghoultokens += winnings
+            loser.ghoultokens -= winnings
+        else:
+            winner.skelecoin += winnings
+            loser.skelecoin -= winnings
+
+        loser.structures[
+            random.choice([k for k, v in loser.structures.items() if v])
+        ] = False
+        await ctx.send(
+            f"{winner.side.capitalize()} wins! Looted {winnings} from {loser.side.capitalize()}."
+        )
+
+    async def battle_loss(self, ctx, loser, winner):
+        loss = int(
+            0.5 * (loser.ghoultokens if loser.side == "ghouls" else loser.skelecoin)
+        )
+        if loser.side == "ghouls":
+            loser.ghoultokens -= loss
+        else:
+            loser.skelecoin -= loss
+        await ctx.send(
+            f"{loser.side.capitalize()} loses the battle and forfeits {loss} currency."
+        )
+
+    # --- Utility ---
+    def get_user(self, user_id):
+        if user_id not in self.user_data:
+            self.user_data[user_id] = User()
+        return self.user_data[user_id]
 
 
 def setup(bot):
