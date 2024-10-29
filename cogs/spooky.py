@@ -36,11 +36,20 @@ STRUCTURE_COSTS = {
     "refinery": 500,
     "graveyard": 750,
     "watchtower": 300,
-    "barracks": 800,  # Add the cost for barracks here
+    "barracks": 800,
+    "remote_flesh_possessor": 10000,  # High cost for ghouls
+}
+SKELETON_STRUCTURE_COSTS = {
+    "command_center": 3000,  # 1000 * 3
+    "refinery": 1500,  # 500 * 3
+    "graveyard": 2250,  # 750 * 3
+    "watchtower": 900,  # 300 * 3
+    "barracks": 2400,  # 800 * 3
+    "legendary_tomb": 100000,  # High cost for skeletons
 }
 
 WATCHTOWER_POWER_BOOST = 0.01  # Boost percentage for army power level
-SKELETON_STRUCTURE_COST_MULTIPLIER = 3  # 3x cost for skeleton structures
+
 # Define units, including secret units, but make them inaccessible initially
 GHOUL_UNITS = {
     "ghouls": {"power": 10, "cost": 20},
@@ -281,7 +290,7 @@ class SpookyMonth(commands.Cog):
         """
         Calculates and updates resources for a user based on the time elapsed since their last interaction.
 
-        This function calculates how many resources a user has gathered based on the number of hours that have
+        This function calculates how many resources a user has gathered based on the number of minutes that have
         passed since their last recorded interaction. Resources such as bonemeal and ectoplasm are generated
         depending on the user's side (skeletons or ghouls) and the number of graveyards owned. Refineries convert
         bonemeal to bones or ectoplasm to cursed meat at an increased rate based on the number of graveyards.
@@ -296,25 +305,32 @@ class SpookyMonth(commands.Cog):
         if not user:
             return
 
-        # Calculate time difference in hours using Unix timestamp
+        # Calculate time difference in minutes using Unix timestamp
         now = time.time()
-        time_elapsed = (now - user.last_interaction) / 3600  # Convert seconds to hours
+        time_elapsed_minutes = (
+            now - user.last_interaction
+        ) / 60  # Convert seconds to minutes
 
         # Calculate resources gained based on elapsed time and number of graveyards/refinery
         if user.structures["graveyard"] > 0:
+            graveyard_count = user.structures["graveyard"]
             if user.side == "skeletons":
-                bonemeal_gained = int(5 * user.structures["graveyard"] * time_elapsed)
+                bonemeal_gained = round(graveyard_count * time_elapsed_minutes / 60, 3)
                 await self.update_user(user_id, delta_bonemeal=bonemeal_gained)
             else:
-                ectoplasm_gained = int(5 * user.structures["graveyard"] * time_elapsed)
+                ectoplasm_gained = round(
+                    graveyard_count * time_elapsed_minutes / 60, 3
+                )  # 1 ectoplasm per minute per graveyard
                 await self.update_user(user_id, delta_ectoplasm=ectoplasm_gained)
 
         # Refinery processing based on elapsed time and number of graveyards
         if user.structures["refinery"]:
+            refinery_rate = (
+                graveyard_count * 0.5
+            )  # 0.5 units per minute per graveyard with refinery
             if user.side == "skeletons":
-                # Convert bonemeal to bones
                 converted_bonemeal = int(
-                    min(user.bonemeal, 3 * user.structures["graveyard"] * time_elapsed)
+                    min(user.bonemeal, refinery_rate * time_elapsed_minutes)
                 )
                 await self.update_user(
                     user_id,
@@ -322,9 +338,8 @@ class SpookyMonth(commands.Cog):
                     delta_bones=converted_bonemeal,
                 )
             else:
-                # Convert ectoplasm to cursed meat
                 converted_ecto = int(
-                    min(user.ectoplasm, 3 * user.structures["graveyard"] * time_elapsed)
+                    min(user.ectoplasm, refinery_rate * time_elapsed_minutes)
                 )
                 await self.update_user(
                     user_id,
@@ -342,18 +357,29 @@ class SpookyMonth(commands.Cog):
         try:
             async with self.state_mutex:
                 with open(spooky_state_file, "rt") as s:
-                    # self.state = from_json_actual(s.read())
                     self.state = State.from_json(s.read())
-
-                    # hack to fix shortcomings in serialization
-                    # why did I even bother with dataclasses
                     actual_state = {}
                     for k, v in self.state.users.items():
                         user_id = int(k)
-                        actual_state[user_id] = User(v["ghoultokens"], v["skelecoin"])
+                        # Initialize User with all attributes from the loaded data
+                        actual_state[user_id] = User(
+                            ghoultokens=v.get("ghoultokens", 0),
+                            skelecoin=v.get("skelecoin", 0),
+                            bonemeal=v.get("bonemeal", 0),
+                            bones=v.get("bones", 0),
+                            ectoplasm=v.get("ectoplasm", 0),
+                            cursed_meat=v.get("cursed_meat", 0),
+                            side=v.get("side", ""),  # Ensure 'side' is restored
+                            structures=v.get("structures", {}),
+                            units=v.get("units", {}),
+                            unlocked_units=v.get("unlocked_units", []),
+                            mummy_parts=v.get("mummy_parts", 0),
+                            build_times=v.get("build_times", {}),
+                            last_interaction=v.get("last_interaction", time.time()),
+                            last_barracks_built=v.get("last_barracks_built", None),
+                        )
                     self.state.users = actual_state
-                    logger.info(f"state is: {self.state}")
-            logger.info("done reading state file")
+                logger.info("done reading state file")
         except Exception as e:
             logger.error(e)
             logger.warn(f"could not read state file, initializing empty one {e}")
@@ -947,185 +973,389 @@ class SpookyMonth(commands.Cog):
         """
         Displays the player's base structures and current resource levels.
 
-        This command shows a player's current base structures, their completion status, and costs. It also
-        provides an overview of the player's current resources, including bonemeal and bones for skeletons
-        or ectoplasm and cursed meat for ghouls. The function first updates resources based on elapsed time
-        since the last interaction before showing the updated values.
-
-        Args:
-            ctx (Context): Discord command context for the player requesting the base information.
-
-        Returns:
-            None
+        This command shows a player's current base structures, separating built structures from
+        those available for construction. It provides an overview of the player's resources,
+        current currency levels, and resource generation rates if graveyards and refineries are built.
         """
-        user = self.state.users.get(ctx.author.id)
+        user_id = ctx.author.id
+        user = self.state.users.get(user_id)
+
+        await self.update_resources_since_last_interaction(
+            user_id
+        )  # update user resource state
         if not user:
             await ctx.send(
                 "You have not joined a side yet! Use `>>join_ghouls` or `>>join_skeletons` to get started."
             )
             return
 
-        # Determine currency name based on side
+        # Check if the user has joined a side
+        if not user.side:
+            await ctx.send(
+                "Please join a side first by using `>>join_skeletons` or `>>join_ghouls`."
+            )
+            return
+
+        # Determine currency and costs based on side
         currency = "ghoul tokens" if user.side == "ghouls" else "skelecoin"
-
-        base_info = f"**Your Base Structures**:\n"
-        base_info += "\n".join(
-            f"{name.capitalize()}: {'Built' if built else 'Not Built'} (Cost: {STRUCTURE_COSTS.get(name, 'Unknown')} {currency})"
-            for name, built in user.structures.items()
-            if name != "graveyard"
+        currency_amount = user.ghoultokens if user.side == "ghouls" else user.skelecoin
+        structure_costs = (
+            SKELETON_STRUCTURE_COSTS if user.side == "skeletons" else STRUCTURE_COSTS
         )
-        base_info += f"\nGraveyard: {user.structures.get('graveyard', 0)} (Cost: {STRUCTURE_COSTS.get('graveyard', 'Unknown')} {currency})\n"
 
-        # Display current resources
-        base_info += f"\n\n**Resources**:"
+        # Prepare display sections
+        built_structures = "**Built:**\n"
+        available_structures = "**Available to build:**\n"
+
+        # Get the special structure name based on side
+        special_structure = (
+            "legendary_tomb" if user.side == "skeletons" else "remote_flesh_possessor"
+        )
+
+        # Process all structures including special structures
+        for name, cost in structure_costs.items():
+            built = user.structures.get(name, False)
+
+            # Add to built structures if it exists
+            if built:
+                if isinstance(built, bool):
+                    built_structures += f"{name} x1\n"
+                else:
+                    built_structures += f"{name} x{built}\n"
+
+            # Skip structures that can only be built once if already built
+            if name in ["command_center", "refinery"] and built:
+                continue
+
+            # Add to available structures if not built or can build multiple
+            if not built or isinstance(built, int):
+                available_structures += f"{name}: "
+                available_structures += "Built" if built else "Not built"
+                cost_text = f" (Cost: {cost} {currency}"
+                cost_text += " each)" if isinstance(built, int) else ")"
+                available_structures += cost_text + "\n"
+
+        # Calculate resource generation rates if structures are built
+        graveyard_count = user.structures.get("graveyard", 0)
+        refinery_built = user.structures.get("refinery", False)
+
+        # Display current resources with generation rates
+        resources_info = f"\n**Resources:**"
         if user.side == "skeletons":
-            base_info += f"\nBonemeal: {user.bonemeal}\nBones: {user.bones}"
+            bonemeal_rate = round(
+                graveyard_count / 60, 3
+            )  # Rate for bonemeal generation per second
+            bones_rate = (
+                round((graveyard_count * 0.5) / 60, 3) if refinery_built else 0
+            )  # Rate if refinery is built
+            resources_info += (
+                f"\nBonemeal: {user.bonemeal:.3f} (+{bonemeal_rate:.3f}/s)"
+                f"\nBones: {user.bones:.3f} (+{bones_rate:.3f}/s)"
+            )
         else:
-            base_info += (
-                f"\nEctoplasm: {user.ectoplasm}\nCursed Meat: {user.cursed_meat}"
+            ectoplasm_rate = round(
+                graveyard_count / 60, 3
+            )  # Rate for ectoplasm generation per second
+            cursed_meat_rate = (
+                round((graveyard_count * 0.5) / 60, 3) if refinery_built else 0
+            )  # Rate if refinery is built
+            resources_info += (
+                f"\nEctoplasm: {user.ectoplasm:.3f} (+{ectoplasm_rate:.3f}/s)"
+                f"\nCursed Meat: {user.cursed_meat:.3f} (+{cursed_meat_rate:.3f}/s)"
             )
 
-        await ctx.send(base_info)
+        # Display current currency at the bottom in bold
+        currency_info = (
+            f"\n\n**Your current {currency.capitalize()}: {currency_amount}**"
+        )
+
+        # Construct and send the full message
+        full_message = (
+            "_Use the `>>build` command to buy a structure_\n\n"
+            + built_structures
+            + available_structures
+            + resources_info
+            + currency_info
+        )
+
+        await ctx.send(full_message)
+
+    @commands.command("build")
+    async def build(self, ctx, structure_name: str = None):
+        """Build a structure for your base."""
+        if not structure_name:
+            await ctx.send("Please specify a structure to build.")
+            return
+
+        user_id = ctx.author.id
+        user = self.state.users.get(user_id)
+
+        await self.update_resources_since_last_interaction(
+            user_id
+        )  # update user resource state
+
+        if not user or not user.side:
+            await ctx.send("You need to join a side first!")
+            return
+
+        # Get the appropriate cost dictionary based on user's side
+        structure_costs = (
+            SKELETON_STRUCTURE_COSTS if user.side == "skeletons" else STRUCTURE_COSTS
+        )
+
+        # Convert structure name to lowercase and replace spaces with underscores
+        structure_name = structure_name.lower().replace(" ", "_")
+
+        # Check if the structure exists in the appropriate cost dictionary
+        if structure_name not in structure_costs:
+            await ctx.send(f"{structure_name} is not a valid structure.")
+            return
+
+        # Get the cost of the structure
+        cost = structure_costs[structure_name]
+
+        # Check if user has enough currency
+        currency = "skelecoin" if user.side == "skeletons" else "ghoul tokens"
+        user_currency = user.skelecoin if user.side == "skeletons" else user.ghoultokens
+
+        if user_currency < cost:
+            await ctx.send(f"You don't have enough {currency} to build this structure!")
+            return
+
+        # Check if structure is already built (for single-instance structures)
+        if structure_name in [
+            "command_center",
+            "refinery",
+            "legendary_tomb",
+            "remote_flesh_possessor",
+        ]:
+            if user.structures.get(structure_name, False):
+                await ctx.send(f"You have already built a {structure_name}!")
+                return
+
+        # Deduct the cost and build the structure
+        if user.side == "skeletons":
+            user.skelecoin -= cost
+        else:
+            user.ghoultokens -= cost
+
+        # Update the structure count
+        if structure_name in ["graveyard", "watchtower", "barracks"]:
+            current_count = user.structures.get(structure_name, 0)
+            if isinstance(current_count, bool):
+                current_count = 1
+            user.structures[structure_name] = current_count + 1
+        else:
+            user.structures[structure_name] = True
+
+        await ctx.send(f"Successfully built {structure_name}!")
+
+        # Save the updated user state
+        await self.save_user_state(user)
 
     @commands.command("units")
     async def units(self, ctx):
-        user = self.get_user(ctx.author.id)
+        user = await self.get_user(ctx.author.id)
+        if not user or not user.side:
+            await ctx.send(
+                "Please join a side first using `>>join_skeletons` or `>>join_ghouls`."
+            )
+            return
+
+        # Determine units based on side
+        side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS
         units_info = f"{ctx.author.display_name}'s Units:\n"
+
+        # List current units
         for unit, details in user.units.items():
             units_info += f"{unit.capitalize()} - Power: {details['power']}, Quantity: {details['quantity']}\n"
-        units_info += f"Total Power Level: {user.get_power_level()}"
+        units_info += f"Total Power Level: {user.get_power_level()}\n\n"
 
+        # List available units for purchase
+        units_info += "**Available Units for Purchase:**\n"
+        for unit, details in side_units.items():
+            # Show the mummy only if all parts are collected
+            if unit == "mummy" and user.mummy_parts < len(MUMMY_PARTS_SEQUENCE):
+                continue  # Skip showing the mummy if all parts are not collected
+
+            # Special units (Brendan Fraser, Beanglove, Giant Zombie) always appear if their conditions are met
+            if unit in ["brendan_fraser", "beanglove", "giant_ghoul"]:
+                if (
+                    (
+                        unit == "brendan_fraser"
+                        and self.brendan_fraser_conditions_met(user)
+                    )
+                    or (unit == "beanglove" and self.beanglove_conditions_met(user))
+                    or (unit == "giant_ghoul" and user.side == "ghouls")
+                ):  # Customize as needed
+                    units_info += f"{unit.capitalize()} - Power: {details['power']}, Cost: {details['cost']}\n"
+                continue
+
+            # Standard unit check: only list if it hasn't been purchased yet
+            if unit not in user.units:
+                units_info += f"{unit.capitalize()} - Power: {details['power']}, Cost: {details['cost']}\n"
+
+        # Display mummy parts if the player is a skeleton
         if user.side == "skeletons":
             mummy_info = f"\nMummy Parts Collected: {user.mummy_parts}/{len(MUMMY_PARTS_SEQUENCE)}"
             units_info += mummy_info
 
         await ctx.send(units_info)
 
+    # Define methods to check secret conditions
+    def brendan_fraser_conditions_met(self, user):
+        # Check for the Legendary Tomb, mummy presence, and sufficient funds for Brendan Fraser
+        has_legendary_tomb = user.structures.get("legendary_tomb", False)
+        has_mummy = user.units.get("mummy", {}).get("quantity", 0) >= 1
+        return has_legendary_tomb and has_mummy
+
+    def beanglove_conditions_met(self, user):
+        # Check for the Remote Flesh Possessor and power level requirement for Beanglove
+        has_remote_flesh_possessor = user.structures.get(
+            "remote_flesh_possessor", False
+        )
+        sufficient_power_level = user.get_power_level() >= 1500
+        return has_remote_flesh_possessor and sufficient_power_level
+
     @commands.command("buy")
-    async def buy(self, ctx, item_name: str):
-        """
-        Handles purchasing of base structures or units for the player.
-
-        This command enables players to buy structures (e.g., refinery, graveyard) or units (e.g., skeletons,
-        ghouls) using resources they have accumulated. It first updates resources based on the time elapsed
-        since the player's last interaction, then checks if the requested item is available and deducts the
-        necessary resources if the player can afford it.
-
-        Args:
-            ctx (Context): Discord command context for the player initiating the purchase.
-            item_name (str): Name of the item to be purchased (structure or unit).
-
-        Returns:
-            None
-        """
-        user = self.state.users.get(ctx.author.id)
-        if not user:
-            await ctx.send(
-                "Please join a side first using `>>join_skeletons` or `>>join_ghouls`."
-            )
+    async def buy(self, ctx, unit_name: str = None, quantity: int = 1):
+        """Allows users to buy units or parts for their side."""
+        if not unit_name:
+            await ctx.send("Please specify a unit to buy.")
             return
 
-        if item_name in STRUCTURE_COSTS:
-            await self.buy_structure(ctx, ctx.author.id, item_name)
-        elif item_name in (SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS):
-            await self.buy_unit(ctx, ctx.author.id, item_name)
-        else:
-            await ctx.send(f"{item_name.capitalize()} is not available for your side.")
+        user_id = ctx.author.id
+        user = self.state.users.get(user_id)
 
-    async def buy_structure(self, ctx, user_id, structure_name):
-        """
-        Handles purchasing of a base structure for a player.
-        """
-        user = self.state.users[user_id]
+        await self.update_resources_since_last_interaction(
+            user_id
+        )  # Update user resource state
 
-        # Check if the structure is a barracks and apply the daily build limit
-        if structure_name == "barracks":
-            if (
-                user.last_barracks_built
-                and (datetime.datetime.now() - user.last_barracks_built).days < 1
+        # Determine available units and currency based on the user's side
+        side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS
+        currency = "bones" if user.side == "skeletons" else "cursed_flesh"
+        user_currency = getattr(user, currency)
+
+        # Special messages for Brendan Fraser and Beanglove
+        special_messages = {
+            "beanglove": [
+                "The beans flow, coating every surface in sight, from the nightmare rises a glove, satin white and filled with horrors beyond description.",
+                "The beans are now oceans. The skies are brown, and the ghouls gorge upon the unearthly blight.",
+                "Beans are the beginning.",
+                "We won't need eyes where we're going...",
+            ],
+            "brendan_fraser": [
+                "A true adventurer can't resist a tomb filled with mummies. The man, the myth, the 1999 cinematic masterpiece, *The Mummy*, with Brendan Fraser and Rachel Weisz.",
+                "The 1999 cinematic masterpiece, *The Mummy*, with Brendan Fraser and Rachel Weisz. The 1999 cinematic masterpiece, *The Mummy*, with Brendan Fraser and Rachel Weisz. Oh no OH NO.",
+                "WHY ARE THERE SO MANY BRENDAN FRASERS!",
+                "The come running across the hills, countless of them. All identical. All Brendan Fraser.",
+            ],
+        }
+
+        # Handle special cases for Brendan Fraser and Beanglove purchases
+        if unit_name in ["beanglove", "brendan_fraser"]:
+            if unit_name == "beanglove" and not self.beanglove_conditions_met(user):
+                await ctx.send("You haven't met the conditions to purchase Beanglove.")
+                return
+            elif (
+                unit_name == "brendan_fraser"
+                and not self.brendan_fraser_conditions_met(user)
             ):
-                await ctx.send("You can only build one barracks per day.")
+                await ctx.send(
+                    "You haven't met the conditions to purchase Brendan Fraser."
+                )
                 return
 
-            user.last_barracks_built = datetime.datetime.now()
-
-        # Calculate cost (skeletons have a cost multiplier)
-        cost = STRUCTURE_COSTS[structure_name] * (
-            SKELETON_STRUCTURE_COST_MULTIPLIER if user.side == "skeletons" else 1
-        )
-
-        if (user.skelecoin if user.side == "skeletons" else user.ghoultokens) >= cost:
-            await self.update_user(
-                user_id,
-                delta_skelecoin=-cost if user.side == "skeletons" else 0,
-                delta_ghoultokens=-cost if user.side != "skeletons" else 0,
-            )
-
-            user.build_times[structure_name] = (
-                datetime.datetime.now() + datetime.timedelta(hours=1)
-            )
-            if structure_name == "barracks":
-                user.structures["barracks"] += 1
-
-            # Unlock special units based on specific structures
-            if structure_name == "remote_meat_possessor" and user.side == "ghouls":
-                user.unlocked_units.extend(["zombie giant", "beanglove"])
+            total_cost = side_units[unit_name]["cost"] * quantity
+            if user_currency < total_cost:
                 await ctx.send(
-                    "Remote Meat Possessor built! You can now create Zombie Giants and the legendary Beanglove."
+                    f"You don't have enough {currency} to buy {quantity} {unit_name}(s)."
                 )
+                return
 
-            elif structure_name == "treasure_tomb" and user.side == "skeletons":
-                user.unlocked_units.append("brendan_fraser")
-                await ctx.send(
-                    "Treasure Tomb built! Brendan Fraser has joined your ranks with immense power. His aura can be felt for miles."
-                )
-
-            await ctx.send(f"{structure_name.capitalize()} will be built in 1 hour.")
-        else:
-            await ctx.send(f"Not enough coins to build {structure_name}.")
-
-    async def buy_unit(self, ctx, user_id, unit_name):
-        """
-        Handles purchasing of units for a player, allowing only unlocked units.
-        """
-        user = self.state.users[user_id]
-        side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS
-        resource = "bones" if user.side == "skeletons" else "cursed_meat"
-        unit_cost = side_units[unit_name]["cost"]
-
-        # Check if the unit is unlocked
-        if unit_name not in user.unlocked_units:
-            await ctx.send(
-                f"{unit_name.capitalize()} is not available for purchase yet."
-            )
-            return
-
-        max_units = user.structures["barracks"] * 10
-        if user.get_unit_count() >= max_units:
-            await ctx.send("You need more barracks to purchase additional units.")
-            return
-
-        if getattr(user, resource) >= unit_cost:
-            await self.update_user(
-                user_id,
-                delta_bones=-unit_cost if resource == "bones" else 0,
-                delta_cursed_meat=-unit_cost if resource == "cursed_meat" else 0,
-            )
-
+            setattr(user, currency, user_currency - total_cost)
             if unit_name in user.units:
-                user.units[unit_name]["quantity"] += 1
+                user.units[unit_name]["quantity"] += quantity
+                message_index = 1  # Display the second-time purchase message
             else:
                 user.units[unit_name] = {
                     "power": side_units[unit_name]["power"],
+                    "quantity": quantity,
+                }
+                message_index = 0  # Display the first-time purchase message
+
+            await ctx.send(special_messages[unit_name][message_index])
+            await self.write_state()
+            return
+
+        # Handle mummy parts and availability of the mummy unit
+        if unit_name == "mummy":
+            if user.mummy_parts < len(MUMMY_PARTS_SEQUENCE):
+                await ctx.send("You need to collect all mummy parts to buy a mummy.")
+                return
+            total_cost = side_units[unit_name]["cost"]
+            if user_currency < total_cost:
+                await ctx.send(f"You don't have enough {currency} to buy a mummy.")
+                return
+            setattr(user, currency, user_currency - total_cost)
+            user.mummy_parts = 0  # Reset mummy parts
+            if "mummy" in user.units:
+                user.units["mummy"]["quantity"] += 1
+            else:
+                user.units["mummy"] = {
+                    "power": side_units[unit_name]["power"],
                     "quantity": 1,
                 }
+            await ctx.send(f"Successfully bought a mummy for {total_cost} {currency}.")
+            await self.write_state()
+            return
+
+        # Handle list-based costs for mummy parts
+        if unit_name == "mummy_part":
+            if user.mummy_parts >= len(MUMMY_PARTS_SEQUENCE):
+                await ctx.send("You have collected all mummy parts.")
+                return
+            part_cost = side_units[unit_name]["cost"][user.mummy_parts]
+            if user_currency < part_cost:
+                await ctx.send(f"You don't have enough {currency} to buy {unit_name}.")
+                return
+            setattr(user, currency, user_currency - part_cost)
+            part_name = MUMMY_PARTS_SEQUENCE[user.mummy_parts]
+            user.mummy_parts += 1
             await ctx.send(
-                f"{unit_name.capitalize()} purchased! Remaining {resource}: {getattr(user, resource)}"
+                f"Successfully bought a {part_name} part for {part_cost} {currency}."
             )
+            await self.write_state()
+            return
+
+        # Handle standard unit purchases
+        unit_name = unit_name.lower()
+        unit_details = side_units.get(unit_name)
+        if not unit_details:
+            await ctx.send(
+                f"{unit_name.capitalize()} is not a valid unit for your side."
+            )
+            return
+
+        total_cost = unit_details["cost"] * quantity
+        if user_currency < total_cost:
+            await ctx.send(
+                f"You don't have enough {currency} to buy {quantity} {unit_name}(s)!"
+            )
+            return
+
+        setattr(user, currency, user_currency - total_cost)
+        if unit_name in user.units:
+            user.units[unit_name]["quantity"] += quantity
         else:
-            await ctx.send(
-                f"Not enough {resource}. {unit_name.capitalize()} costs {unit_cost}."
-            )
+            user.units[unit_name] = {
+                "power": unit_details["power"],
+                "quantity": quantity,
+            }
+        await ctx.send(
+            f"Successfully bought {quantity} {unit_name}(s) for {total_cost} {currency}."
+        )
+        await self.write_state()
 
     @commands.command("battle")
     async def battle(self, ctx, target: discord.User):
@@ -1206,6 +1436,8 @@ class SpookyMonth(commands.Cog):
         await self.record_battle(winner.side, loser.side, "Victory")
 
     async def battle_loss(self, ctx, loser, winner, outcome_message):
+        user_id = ctx.author.id
+        await self.update_resources_since_last_interaction(user_id)  # update resources
         """
         When the player loses an attack, 50% of their currency is transferred to the defender.
         """
