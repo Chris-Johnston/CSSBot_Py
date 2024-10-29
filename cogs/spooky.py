@@ -32,11 +32,13 @@ from dataclass_wizard import JSONWizard
 MUMMY_PARTS_SEQUENCE = ["legs", "arms", "head", "torso", "foot"]
 MUMMY_PART_COSTS = [50, 50, 200, 300, 500]
 STRUCTURE_COSTS = {
-    "command_center": 100,
-    "refinery": 50,
-    "graveyard": 75,
-    "watchtower": 150,
+    "command_center": 1000,
+    "refinery": 500,
+    "graveyard": 750,
+    "watchtower": 300,
+    "barracks": 800,  # Add the cost for barracks here
 }
+
 WATCHTOWER_POWER_BOOST = 0.01  # Boost percentage for army power level
 SKELETON_STRUCTURE_COST_MULTIPLIER = 3  # 3x cost for skeleton structures
 # Define units, including secret units, but make them inaccessible initially
@@ -196,8 +198,7 @@ class SpookyMonth(commands.Cog):
         self.state_mutex = asyncio.Lock()
         # running an old version of python oh well
 
-        loops = asyncio.get_event_loop()
-        loops.run_until_complete(self.read_state())
+        asyncio.create_task(self.read_state())
         # asyncio.run(self.read_state())
 
         with open(spooky_phrases_file, "rt") as s:
@@ -259,6 +260,23 @@ class SpookyMonth(commands.Cog):
         except FileNotFoundError:
             return []
 
+    async def join_side(self, ctx, side):
+        user = await self.get_user(ctx.author.id)
+
+        # Check if the user has already joined a side
+        if user.side:
+            await ctx.send(
+                f"You have already joined the {user.side.capitalize()}! You cannot switch sides."
+            )
+            return
+
+        # Assign the side if not already joined
+        user.side = side
+        self.state.users[ctx.author.id] = user
+        await ctx.send(
+            f"Welcome to the {side.capitalize()}! Use `>>base` to see your structures and `>>units` to manage your army."
+        )
+
     async def update_resources_since_last_interaction(self, user_id):
         """
         Calculates and updates resources for a user based on the time elapsed since their last interaction.
@@ -274,7 +292,7 @@ class SpookyMonth(commands.Cog):
         Returns:
             None
         """
-        user = self.state["users"].get(user_id)
+        user = self.state.users.get(user_id)
         if not user:
             return
 
@@ -367,8 +385,9 @@ class SpookyMonth(commands.Cog):
             f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}"
         )
 
-        if user_id in self.state["users"]:
-            user = self.state["users"][user_id]
+        # Access self.state.users as the dictionary
+        if user_id in self.state.users:
+            user = self.state.users[user_id]
             if delta_ghoultokens is not None:
                 user.ghoultokens += delta_ghoultokens
             if delta_skelecoin is not None:
@@ -383,14 +402,13 @@ class SpookyMonth(commands.Cog):
                 user.cursed_meat += delta_cursed_meat
         else:
             logger.info(f"new user user_id {user_id}")
-            self.state["users"][user_id] = User(
-                delta_ghoultokens or 0,
-                delta_skelecoin or 0,
+            self.state.users[user_id] = User(
+                delta_ghoultokens or 0, delta_skelecoin or 0
             )
-            self.state["users"][user_id].bonemeal += delta_bonemeal
-            self.state["users"][user_id].bones += delta_bones
-            self.state["users"][user_id].ectoplasm += delta_ectoplasm
-            self.state["users"][user_id].cursed_meat += delta_cursed_meat
+            self.state.users[user_id].bonemeal += delta_bonemeal
+            self.state.users[user_id].bones += delta_bones
+            self.state.users[user_id].ectoplasm += delta_ectoplasm
+            self.state.users[user_id].cursed_meat += delta_cursed_meat
 
         await self.write_state()
 
@@ -889,12 +907,10 @@ class SpookyMonth(commands.Cog):
         Shows a list of all available player bases, with 'danger level' for both allies and enemies.
         Enemy bases are clearly marked.
         """
-        user_side = self.state["users"][
-            ctx.author.id
-        ].side  # Get the command user's side
+        user_side = self.state.users[ctx.author.id].side  # Get the command user's side
         base_list = "**Available Bases:**\n"
 
-        for user_id, user in self.state["users"].items():
+        for user_id, user in self.state.users.items():
             danger_level = user.get_power_level()
             # Mark enemy bases with a warning symbol and distinguish them from allies
             if user.side == user_side:
@@ -915,14 +931,6 @@ class SpookyMonth(commands.Cog):
     async def join_ghouls(self, ctx):
         await self.join_side(ctx, "ghouls")
 
-    async def join_side(self, ctx, side):
-        user = self.get_user(ctx.author.id)
-        user.side = side
-        self.user_data[ctx.author.id] = user
-        await ctx.send(
-            f"Welcome to the {side.capitalize()}! Use `>>base` to see your structures and `>>units` to manage your army."
-        )
-
     @commands.command("base")
     async def base(self, ctx):
         """
@@ -939,20 +947,23 @@ class SpookyMonth(commands.Cog):
         Returns:
             None
         """
-        user = self.state["users"].get(ctx.author.id)
+        user = self.state.users.get(ctx.author.id)
         if not user:
             await ctx.send(
-                "Please join a side first using `>>join_skeletons` or `>>join_ghouls`."
+                "You have not joined a side yet! Use `>>join_ghouls` or `>>join_skeletons` to get started."
             )
             return
 
+        # Determine currency name based on side
+        currency = "ghoul tokens" if user.side == "ghouls" else "skelecoin"
+
         base_info = f"**Your Base Structures**:\n"
         base_info += "\n".join(
-            f"{name.capitalize()}: {'Built' if built else 'Not Built'} (Cost: {STRUCTURE_COSTS[name]} {user.side})"
+            f"{name.capitalize()}: {'Built' if built else 'Not Built'} (Cost: {STRUCTURE_COSTS.get(name, 'Unknown')} {currency})"
             for name, built in user.structures.items()
             if name != "graveyard"
         )
-        base_info += f"\nGraveyards: {user.structures['graveyard']} (Cost: {STRUCTURE_COSTS['graveyard']} {user.side})"
+        base_info += f"\nGraveyard: {user.structures.get('graveyard', 0)} (Cost: {STRUCTURE_COSTS.get('graveyard', 'Unknown')} {currency})\n"
 
         # Display current resources
         base_info += f"\n\n**Resources**:"
@@ -996,7 +1007,7 @@ class SpookyMonth(commands.Cog):
         Returns:
             None
         """
-        user = self.state["users"].get(ctx.author.id)
+        user = self.state.users.get(ctx.author.id)
         if not user:
             await ctx.send(
                 "Please join a side first using `>>join_skeletons` or `>>join_ghouls`."
@@ -1014,7 +1025,7 @@ class SpookyMonth(commands.Cog):
         """
         Handles purchasing of a base structure for a player.
         """
-        user = self.state["users"][user_id]
+        user = self.state.users[user_id]
 
         # Check if the structure is a barracks and apply the daily build limit
         if structure_name == "barracks":
@@ -1066,7 +1077,7 @@ class SpookyMonth(commands.Cog):
         """
         Handles purchasing of units for a player, allowing only unlocked units.
         """
-        user = self.state["users"][user_id]
+        user = self.state.users[user_id]
         side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS
         resource = "bones" if user.side == "skeletons" else "cursed_meat"
         unit_cost = side_units[unit_name]["cost"]
@@ -1202,5 +1213,5 @@ class SpookyMonth(commands.Cog):
         await self.record_battle(loser.side, winner.side, "Loss")
 
 
-def setup(bot):
-    bot.add_cog(SpookyMonth(bot))
+async def setup(bot):
+    await bot.add_cog(SpookyMonth(bot))
