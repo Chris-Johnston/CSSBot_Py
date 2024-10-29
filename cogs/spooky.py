@@ -53,7 +53,7 @@ SKELETON_UNITS = {
     "skeletons": {"power": 10, "cost": 20},
     "mummy_part": {"power": 0, "cost": MUMMY_PART_COSTS},
     "mummy": {"power": 1000, "cost": sum(MUMMY_PART_COSTS)},
-    "brendan fraser": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
+    "brendan_fraser": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
 }
 
 
@@ -859,8 +859,54 @@ class SpookyMonth(commands.Cog):
     Spooky game addition
     :)))
     """
+    battle_log = []  # to store the battle history
+
+    async def record_battle(self, attacker, defender, outcome):
+        """
+        Records the outcome of a battle for history tracking.
+        """
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        record = f"{timestamp}: {attacker} vs {defender} - Outcome: {outcome}"
+        self.battle_log.append(record)
 
     # --- Game Commands ---
+
+    @commands.command("battle_history")
+    async def battle_history(self, ctx):
+        """
+        Shows the past 10 battles and their outcomes.
+        """
+        if not self.battle_log:
+            await ctx.send("No battles have been recorded recently.")
+            return
+
+        history = "\n".join(self.battle_log[-10:])  # Show last 10 battles
+        await ctx.send(f"**Battle History:**\n{history}")
+
+    @commands.command("spooky_bases")
+    async def spooky_bases(self, ctx):
+        """
+        Shows a list of all available player bases, with 'danger level' for both allies and enemies.
+        Enemy bases are clearly marked.
+        """
+        user_side = self.state["users"][
+            ctx.author.id
+        ].side  # Get the command user's side
+        base_list = "**Available Bases:**\n"
+
+        for user_id, user in self.state["users"].items():
+            danger_level = user.get_power_level()
+            # Mark enemy bases with a warning symbol and distinguish them from allies
+            if user.side == user_side:
+                base_list += f"🛡️ Ally: <@{user_id}> - Danger Level: {danger_level}\n"
+            else:
+                base_list += f"⚔️ Enemy: <@{user_id}> - Danger Level: {danger_level}\n"
+
+        if base_list:
+            await ctx.send(base_list)
+        else:
+            await ctx.send("No bases available.")
+
     @commands.command("join_skeletons")
     async def join_skeletons(self, ctx):
         await self.join_side(ctx, "skeletons")
@@ -1007,7 +1053,7 @@ class SpookyMonth(commands.Cog):
                 )
 
             elif structure_name == "treasure_tomb" and user.side == "skeletons":
-                user.unlocked_units.append("brendan fraser")
+                user.unlocked_units.append("brendan_fraser")
                 await ctx.send(
                     "Treasure Tomb built! Brendan Fraser has joined your ranks with immense power. His aura can be felt for miles."
                 )
@@ -1085,8 +1131,8 @@ class SpookyMonth(commands.Cog):
         # Determine if any special units are involved
         attacker_has_beanglove = "beanglove" in attacker.units
         defender_has_beanglove = "beanglove" in defender.units
-        attacker_has_brendan = "brendan fraser" in attacker.units
-        defender_has_brendan = "brendan fraser" in defender.units
+        attacker_has_brendan = "brendan_fraser" in attacker.units
+        defender_has_brendan = "brendan_fraser" in defender.units
 
         # Choose the appropriate battle outcome file and keyword based on sides and special units
         outcome_file = (
@@ -1140,6 +1186,7 @@ class SpookyMonth(commands.Cog):
         await ctx.send(
             f"{outcome_message} {winner.side.capitalize()} wins! Looted {winnings} from {loser.side.capitalize()}."
         )
+        await self.record_battle(winner.side, loser.side, "Victory")
 
     async def battle_loss(self, ctx, loser, winner, outcome_message):
         """
@@ -1157,6 +1204,7 @@ class SpookyMonth(commands.Cog):
         await ctx.send(
             f"{outcome_message} {loser.side.capitalize()} loses the battle and forfeits {loss} currency to {winner.side.capitalize()}."
         )
+        await self.record_battle(loser.side, winner.side, "Loss")
 
 
 def setup(bot):
