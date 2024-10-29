@@ -29,8 +29,8 @@ from dataclasses import dataclass, field
 from dataclass_wizard import JSONWizard
 
 # Constants for game mechanics
-MUMMY_PARTS_SEQUENCE = ["leg", "arm", "head", "torso", "foot"]
-MUMMY_PART_COSTS = [100, 200, 300, 400, 500]
+MUMMY_PARTS_SEQUENCE = ["legs", "arms", "head", "torso", "foot"]
+MUMMY_PART_COSTS = [50, 50, 200, 300, 500]
 STRUCTURE_COSTS = {
     "command_center": 100,
     "refinery": 50,
@@ -39,17 +39,21 @@ STRUCTURE_COSTS = {
 }
 WATCHTOWER_POWER_BOOST = 0.01  # Boost percentage for army power level
 SKELETON_STRUCTURE_COST_MULTIPLIER = 3  # 3x cost for skeleton structures
+# Define units, including secret units, but make them inaccessible initially
 GHOUL_UNITS = {
     "ghouls": {"power": 10, "cost": 20},
     "wraiths": {"power": 20, "cost": 50},
     "ghosts": {"power": 30, "cost": 75},
     "zombies": {"power": 40, "cost": 100},
     "giant ghoul": {"power": 100, "cost": 300},
+    "zombie giant": {"power": 500, "cost": 1000},  # Secret unit, initially locked
+    "beanglove": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
 }
 SKELETON_UNITS = {
     "skeletons": {"power": 10, "cost": 20},
     "mummy_part": {"power": 0, "cost": MUMMY_PART_COSTS},
     "mummy": {"power": 1000, "cost": sum(MUMMY_PART_COSTS)},
+    "brendan fraser": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
 }
 
 
@@ -68,12 +72,15 @@ class User:
             "refinery": False,
             "graveyard": 0,
             "watchtower": False,
+            "barracks": 0,
         }
     )
     units: dict = field(default_factory=dict)
+    unlocked_units: list = field(default_factory=list)  # Track unlocked special units
     mummy_parts: int = 0
     build_times: dict = field(default_factory=dict)
     last_interaction: float = field(default_factory=time.time)
+    last_barracks_built: datetime.datetime = None
 
     def get_power_level(self):
         total_power = sum(
@@ -82,6 +89,9 @@ class User:
         if self.structures.get("watchtower"):
             total_power *= 1 + WATCHTOWER_POWER_BOOST
         return int(total_power)
+
+    def get_unit_count(self):
+        return sum(details["quantity"] for details in self.units.values())
 
 
 @dataclass
@@ -229,35 +239,25 @@ class SpookyMonth(commands.Cog):
         return max(0.001, value)
 
     # Game addition
-    def load_battle_outcomes(self, filename):
+    def load_battle_outcomes(self, filename, keyword=None):
         """
-        Loads battle outcome messages from a specified text file.
-
-        This function reads battle outcome phrases from a file and stores them in a list for random selection.
-        If the file is not found, default phrases are used. These messages will be shown during battle
-        to provide narrative feedback on battle outcomes.
+        Loads battle outcome messages from a specified text file, optionally filtered by a keyword.
 
         Args:
             filename (str): The name of the text file to load battle outcomes from.
+            keyword (str, optional): If provided, only lines containing this keyword will be loaded.
 
         Returns:
-            list: A list of strings representing different battle outcome messages.
+            list: A list of strings representing filtered battle outcome messages.
         """
         try:
             with open(filename, "r") as file:
-                return [line.strip() for line in file.readlines()]
+                lines = [line.strip() for line in file.readlines()]
+                if keyword:
+                    lines = [line for line in lines if keyword in line.lower()]
+                return lines
         except FileNotFoundError:
-            # Provide default messages based on the file that was not found
-            if filename == "battle_outcomes_skeleton.txt":
-                return [
-                    "Skeletons triumphed with chilling force!",
-                    "The skeleton army conquered with bony resolve!",
-                ]
-            else:
-                return [
-                    "Ghouls emerged victorious with a ghastly wail!",
-                    "The ghoul army overwhelmed their foes!",
-                ]
+            return []
 
     async def update_resources_since_last_interaction(self, user_id):
         """
@@ -965,28 +965,77 @@ class SpookyMonth(commands.Cog):
             await ctx.send(f"{item_name.capitalize()} is not available for your side.")
 
     async def buy_structure(self, ctx, user_id, structure_name):
+        """
+        Handles purchasing of a base structure for a player.
+        """
         user = self.state["users"][user_id]
+
+        # Check if the structure is a barracks and apply the daily build limit
+        if structure_name == "barracks":
+            if (
+                user.last_barracks_built
+                and (datetime.datetime.now() - user.last_barracks_built).days < 1
+            ):
+                await ctx.send("You can only build one barracks per day.")
+                return
+
+            user.last_barracks_built = datetime.datetime.now()
+
+        # Calculate cost (skeletons have a cost multiplier)
         cost = STRUCTURE_COSTS[structure_name] * (
             SKELETON_STRUCTURE_COST_MULTIPLIER if user.side == "skeletons" else 1
         )
+
         if (user.skelecoin if user.side == "skeletons" else user.ghoultokens) >= cost:
             await self.update_user(
                 user_id,
                 delta_skelecoin=-cost if user.side == "skeletons" else 0,
                 delta_ghoultokens=-cost if user.side != "skeletons" else 0,
             )
+
             user.build_times[structure_name] = (
                 datetime.datetime.now() + datetime.timedelta(hours=1)
             )
+            if structure_name == "barracks":
+                user.structures["barracks"] += 1
+
+            # Unlock special units based on specific structures
+            if structure_name == "remote_meat_possessor" and user.side == "ghouls":
+                user.unlocked_units.extend(["zombie giant", "beanglove"])
+                await ctx.send(
+                    "Remote Meat Possessor built! You can now create Zombie Giants and the legendary Beanglove."
+                )
+
+            elif structure_name == "treasure_tomb" and user.side == "skeletons":
+                user.unlocked_units.append("brendan fraser")
+                await ctx.send(
+                    "Treasure Tomb built! Brendan Fraser has joined your ranks with immense power. His aura can be felt for miles."
+                )
+
             await ctx.send(f"{structure_name.capitalize()} will be built in 1 hour.")
         else:
             await ctx.send(f"Not enough coins to build {structure_name}.")
 
     async def buy_unit(self, ctx, user_id, unit_name):
+        """
+        Handles purchasing of units for a player, allowing only unlocked units.
+        """
         user = self.state["users"][user_id]
         side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS
         resource = "bones" if user.side == "skeletons" else "cursed_meat"
         unit_cost = side_units[unit_name]["cost"]
+
+        # Check if the unit is unlocked
+        if unit_name not in user.unlocked_units:
+            await ctx.send(
+                f"{unit_name.capitalize()} is not available for purchase yet."
+            )
+            return
+
+        max_units = user.structures["barracks"] * 10
+        if user.get_unit_count() >= max_units:
+            await ctx.send("You need more barracks to purchase additional units.")
+            return
 
         if getattr(user, resource) >= unit_cost:
             await self.update_user(
@@ -994,6 +1043,7 @@ class SpookyMonth(commands.Cog):
                 delta_bones=-unit_cost if resource == "bones" else 0,
                 delta_cursed_meat=-unit_cost if resource == "cursed_meat" else 0,
             )
+
             if unit_name in user.units:
                 user.units[unit_name]["quantity"] += 1
             else:
@@ -1013,15 +1063,10 @@ class SpookyMonth(commands.Cog):
     async def battle(self, ctx, target: discord.User):
         """
         Initiates a battle between the command issuer (attacker) and the target user (defender).
-        The outcome of the battle depends on each player's power level and a random factor
-        to introduce variability.
 
         Args:
             ctx: Discord command context for the message author initiating the battle.
             target (discord.User): The user to battle against.
-
-        Returns:
-            None
         """
         # Check if the target user is valid
         if target is None or not isinstance(target, discord.User):
@@ -1037,27 +1082,45 @@ class SpookyMonth(commands.Cog):
             await ctx.send("You cannot battle your own side!")
             return
 
-        # Calculate attack and defense rolls by multiplying power levels with a random factor
-        # This introduces a chance factor so higher power does not always guarantee a win
+        # Determine if any special units are involved
+        attacker_has_beanglove = "beanglove" in attacker.units
+        defender_has_beanglove = "beanglove" in defender.units
+        attacker_has_brendan = "brendan fraser" in attacker.units
+        defender_has_brendan = "brendan fraser" in defender.units
+
+        # Choose the appropriate battle outcome file and keyword based on sides and special units
+        outcome_file = (
+            "battle_outcomes_skeleton.txt"
+            if attacker.side == "skeletons"
+            else "battle_outcomes_ghoul.txt"
+        )
+        special_keyword = None
+        if attacker_has_beanglove or defender_has_beanglove:
+            special_keyword = "bean"
+        elif attacker_has_brendan or defender_has_brendan:
+            special_keyword = "brendan"
+
+        # Load outcome messages based on the keyword if a special unit is involved
+        if special_keyword:
+            outcome_messages = self.load_battle_outcomes(
+                outcome_file, keyword=special_keyword
+            )
+        else:
+            outcome_messages = self.load_battle_outcomes(outcome_file)
+
+        if not outcome_messages:
+            await ctx.send("The void beckons.")
+            return
+
+        # Perform battle calculations
         attack_roll = attacker.get_power_level() * random.uniform(0.8, 1.2)
         defend_roll = defender.get_power_level() * random.uniform(0.8, 1.2)
+        outcome_message = random.choice(outcome_messages)
 
-        # Choose an appropriate outcome message based on the result of the battle
-        # If the attacker wins, a skeleton or ghoul victory message is chosen based on the attacker's side
+        # Send outcome message and determine winner
         if attack_roll > defend_roll:
-            outcome_message = (
-                random.choice(self.battle_outcomes_skeleton)
-                if attacker.side == "skeletons"
-                else random.choice(self.battle_outcomes_ghoul)
-            )
             await self.battle_victory(ctx, attacker, defender, outcome_message)
         else:
-            # If the defender wins, an outcome message for the ghoul or skeleton victory is chosen based on the defender's side
-            outcome_message = (
-                random.choice(self.battle_outcomes_ghoul)
-                if defender.side == "ghouls"
-                else random.choice(self.battle_outcomes_skeleton)
-            )
             await self.battle_loss(ctx, attacker, defender, outcome_message)
 
     async def battle_victory(self, ctx, winner, loser, outcome_message):
