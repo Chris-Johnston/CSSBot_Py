@@ -39,7 +39,7 @@ STRUCTURE_COSTS = {
 }
 WATCHTOWER_POWER_BOOST = 0.01  # Boost percentage for army power level
 SKELETON_STRUCTURE_COST_MULTIPLIER = 3  # 3x cost for skeleton structures
-GHOUl_UNITS = {
+GHOUL_UNITS = {
     "ghouls": {"power": 10, "cost": 20},
     "wraiths": {"power": 20, "cost": 50},
     "ghosts": {"power": 30, "cost": 75},
@@ -57,21 +57,31 @@ SKELETON_UNITS = {
 class User:
     ghoultokens: int = 0
     skelecoin: int = 0
+    bonemeal: int = 0
+    bones: int = 0
+    ectoplasm: int = 0
+    cursed_meat: int = 0
     side: str = ""
     structures: dict = field(
         default_factory=lambda: {
             "command_center": False,
             "refinery": False,
-            "graveyard": False,
+            "graveyard": 0,
+            "watchtower": False,
         }
     )
     units: dict = field(default_factory=dict)
-    mummy_parts: int = 0  # Tracks the number of mummy parts collected
+    mummy_parts: int = 0
+    build_times: dict = field(default_factory=dict)
+    last_interaction: float = field(default_factory=time.time)
 
     def get_power_level(self):
-        return sum(
+        total_power = sum(
             details["power"] * details["quantity"] for details in self.units.values()
         )
+        if self.structures.get("watchtower"):
+            total_power *= 1 + WATCHTOWER_POWER_BOOST
+        return int(total_power)
 
 
 @dataclass
@@ -147,6 +157,17 @@ class SpookyMonth(commands.Cog):
         now = datetime.datetime.now()
         allow_spooky = True
 
+        # Game addition
+        self.bot = bot
+        self.state = {"users": {}}
+        # Load battle outcome messages for skeleton and ghoul victories
+        self.battle_outcomes_skeleton = self.load_battle_outcomes(
+            "battle_outcomes_skeleton.txt"
+        )
+        self.battle_outcomes_ghoul = self.load_battle_outcomes(
+            "battle_outcomes_ghoul.txt"
+        )
+
         if now.month != 10:
             # 3 day grace period
             if now.month == 11 and now.day < 3:
@@ -207,6 +228,96 @@ class SpookyMonth(commands.Cog):
             return value
         return max(0.001, value)
 
+    # Game addition
+    def load_battle_outcomes(self, filename):
+        """
+        Loads battle outcome messages from a specified text file.
+
+        This function reads battle outcome phrases from a file and stores them in a list for random selection.
+        If the file is not found, default phrases are used. These messages will be shown during battle
+        to provide narrative feedback on battle outcomes.
+
+        Args:
+            filename (str): The name of the text file to load battle outcomes from.
+
+        Returns:
+            list: A list of strings representing different battle outcome messages.
+        """
+        try:
+            with open(filename, "r") as file:
+                return [line.strip() for line in file.readlines()]
+        except FileNotFoundError:
+            # Provide default messages based on the file that was not found
+            if filename == "battle_outcomes_skeleton.txt":
+                return [
+                    "Skeletons triumphed with chilling force!",
+                    "The skeleton army conquered with bony resolve!",
+                ]
+            else:
+                return [
+                    "Ghouls emerged victorious with a ghastly wail!",
+                    "The ghoul army overwhelmed their foes!",
+                ]
+
+    async def update_resources_since_last_interaction(self, user_id):
+        """
+        Calculates and updates resources for a user based on the time elapsed since their last interaction.
+
+        This function calculates how many resources a user has gathered based on the number of hours that have
+        passed since their last recorded interaction. Resources such as bonemeal and ectoplasm are generated
+        depending on the user's side (skeletons or ghouls) and the number of graveyards owned. Refineries convert
+        bonemeal to bones or ectoplasm to cursed meat at an increased rate based on the number of graveyards.
+
+        Args:
+            user_id (int): Unique identifier for the user.
+
+        Returns:
+            None
+        """
+        user = self.state["users"].get(user_id)
+        if not user:
+            return
+
+        # Calculate time difference in hours using Unix timestamp
+        now = time.time()
+        time_elapsed = (now - user.last_interaction) / 3600  # Convert seconds to hours
+
+        # Calculate resources gained based on elapsed time and number of graveyards/refinery
+        if user.structures["graveyard"] > 0:
+            if user.side == "skeletons":
+                bonemeal_gained = int(5 * user.structures["graveyard"] * time_elapsed)
+                await self.update_user(user_id, delta_bonemeal=bonemeal_gained)
+            else:
+                ectoplasm_gained = int(5 * user.structures["graveyard"] * time_elapsed)
+                await self.update_user(user_id, delta_ectoplasm=ectoplasm_gained)
+
+        # Refinery processing based on elapsed time and number of graveyards
+        if user.structures["refinery"]:
+            if user.side == "skeletons":
+                # Convert bonemeal to bones
+                converted_bonemeal = int(
+                    min(user.bonemeal, 3 * user.structures["graveyard"] * time_elapsed)
+                )
+                await self.update_user(
+                    user_id,
+                    delta_bonemeal=-converted_bonemeal,
+                    delta_bones=converted_bonemeal,
+                )
+            else:
+                # Convert ectoplasm to cursed meat
+                converted_ecto = int(
+                    min(user.ectoplasm, 3 * user.structures["graveyard"] * time_elapsed)
+                )
+                await self.update_user(
+                    user_id,
+                    delta_ectoplasm=-converted_ecto,
+                    delta_cursed_meat=converted_ecto,
+                )
+
+        # Update last interaction time to the current Unix time
+        user.last_interaction = now
+        await self.write_state()
+
     # who needs a database, json is MY database
     async def read_state(self):
         logger.info("reading state from file")
@@ -242,23 +353,44 @@ class SpookyMonth(commands.Cog):
         except Exception as e:
             logger.warn("failed to write state for some reason idk", e)
 
-    # the good stuff
-    async def update_user(self, user_id, delta_ghoultokens=None, delta_skelecoin=None):
+    async def update_user(
+        self,
+        user_id,
+        delta_ghoultokens=None,
+        delta_skelecoin=None,
+        delta_bonemeal=0,
+        delta_bones=0,
+        delta_ectoplasm=0,
+        delta_cursed_meat=0,
+    ):
         logger.info(
             f"update user_id {user_id} ghoul {delta_ghoultokens} skele {delta_skelecoin}"
         )
-        if user_id in self.state.users:
-            # update existing
+
+        if user_id in self.state["users"]:
+            user = self.state["users"][user_id]
             if delta_ghoultokens is not None:
-                self.state.users[user_id].ghoultokens += delta_ghoultokens
+                user.ghoultokens += delta_ghoultokens
             if delta_skelecoin is not None:
-                self.state.users[user_id].skelecoin += delta_skelecoin
+                user.skelecoin += delta_skelecoin
+            if delta_bonemeal != 0:
+                user.bonemeal += delta_bonemeal
+            if delta_bones != 0:
+                user.bones += delta_bones
+            if delta_ectoplasm != 0:
+                user.ectoplasm += delta_ectoplasm
+            if delta_cursed_meat != 0:
+                user.cursed_meat += delta_cursed_meat
         else:
-            # new user
             logger.info(f"new user user_id {user_id}")
-            self.state.users[user_id] = User(
-                delta_ghoultokens or 0, delta_skelecoin or 0
+            self.state["users"][user_id] = User(
+                delta_ghoultokens or 0,
+                delta_skelecoin or 0,
             )
+            self.state["users"][user_id].bonemeal += delta_bonemeal
+            self.state["users"][user_id].bones += delta_bones
+            self.state["users"][user_id].ectoplasm += delta_ectoplasm
+            self.state["users"][user_id].cursed_meat += delta_cursed_meat
 
         await self.write_state()
 
@@ -725,6 +857,7 @@ class SpookyMonth(commands.Cog):
 
     """
     Spooky game addition
+    :)))
     """
 
     # --- Game Commands ---
@@ -746,11 +879,44 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("base")
     async def base(self, ctx):
-        user = self.get_user(ctx.author.id)
-        base_info = "Your Base Structures:\n" + "\n".join(
+        """
+        Displays the player's base structures and current resource levels.
+
+        This command shows a player's current base structures, their completion status, and costs. It also
+        provides an overview of the player's current resources, including bonemeal and bones for skeletons
+        or ectoplasm and cursed meat for ghouls. The function first updates resources based on elapsed time
+        since the last interaction before showing the updated values.
+
+        Args:
+            ctx (Context): Discord command context for the player requesting the base information.
+
+        Returns:
+            None
+        """
+        user = self.state["users"].get(ctx.author.id)
+        if not user:
+            await ctx.send(
+                "Please join a side first using `>>join_skeletons` or `>>join_ghouls`."
+            )
+            return
+
+        base_info = f"**Your Base Structures**:\n"
+        base_info += "\n".join(
             f"{name.capitalize()}: {'Built' if built else 'Not Built'} (Cost: {STRUCTURE_COSTS[name]} {user.side})"
             for name, built in user.structures.items()
+            if name != "graveyard"
         )
+        base_info += f"\nGraveyards: {user.structures['graveyard']} (Cost: {STRUCTURE_COSTS['graveyard']} {user.side})"
+
+        # Display current resources
+        base_info += f"\n\n**Resources**:"
+        if user.side == "skeletons":
+            base_info += f"\nBonemeal: {user.bonemeal}\nBones: {user.bones}"
+        else:
+            base_info += (
+                f"\nEctoplasm: {user.ectoplasm}\nCursed Meat: {user.cursed_meat}"
+            )
+
         await ctx.send(base_info)
 
     @commands.command("units")
@@ -767,70 +933,67 @@ class SpookyMonth(commands.Cog):
 
         await ctx.send(units_info)
 
-    @commands.command("buy_unit")
-    async def buy_unit(self, ctx, unit_name: str):
-        user = self.get_user(ctx.author.id)
-        side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUl_UNITS
+    @commands.command("buy")
+    async def buy(self, ctx, item_name: str):
+        """
+        Handles purchasing of base structures or units for the player.
 
-        # Check if unit is available for this side
-        if unit_name not in side_units and unit_name not in STRUCTURE_COSTS:
-            await ctx.send(f"{unit_name.capitalize()} is not available for your side.")
+        This command enables players to buy structures (e.g., refinery, graveyard) or units (e.g., skeletons,
+        ghouls) using resources they have accumulated. It first updates resources based on the time elapsed
+        since the player's last interaction, then checks if the requested item is available and deducts the
+        necessary resources if the player can afford it.
+
+        Args:
+            ctx (Context): Discord command context for the player initiating the purchase.
+            item_name (str): Name of the item to be purchased (structure or unit).
+
+        Returns:
+            None
+        """
+        user = self.state["users"].get(ctx.author.id)
+        if not user:
+            await ctx.send(
+                "Please join a side first using `>>join_skeletons` or `>>join_ghouls`."
+            )
             return
 
-        # Handle special case for mummy parts
-        if unit_name == "mummy_part" and user.side == "skeletons":
-            await self.buy_mummy_part(ctx, user)
-            return
-        elif unit_name == "mummy" and user.side == "skeletons":
-            if user.mummy_parts < len(MUMMY_PARTS_SEQUENCE):
-                await ctx.send(
-                    "You must collect all mummy parts before assembling the mummy!"
-                )
-            else:
-                user.units["mummy"] = {"power": 1000, "quantity": 1}
-                user.mummy_parts = 0
-                await ctx.send(
-                    "The Mummy has been assembled and added to your units! Prepare for battle."
-                )
-            return
+        if item_name in STRUCTURE_COSTS:
+            await self.buy_structure(ctx, ctx.author.id, item_name)
+        elif item_name in (SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS):
+            await self.buy_unit(ctx, ctx.author.id, item_name)
+        else:
+            await ctx.send(f"{item_name.capitalize()} is not available for your side.")
 
-        # Handle base structures like watchtower
-        if unit_name in STRUCTURE_COSTS:
-            if user.structures[unit_name]:
-                await ctx.send(f"{unit_name.capitalize()} is already built.")
-            else:
-                # Apply cost multiplier if on skeleton side
-                structure_cost = STRUCTURE_COSTS[unit_name]
-                if user.side == "skeletons":
-                    structure_cost *= SKELETON_STRUCTURE_COST_MULTIPLIER
+    async def buy_structure(self, ctx, user_id, structure_name):
+        user = self.state["users"][user_id]
+        cost = STRUCTURE_COSTS[structure_name] * (
+            SKELETON_STRUCTURE_COST_MULTIPLIER if user.side == "skeletons" else 1
+        )
+        if (user.skelecoin if user.side == "skeletons" else user.ghoultokens) >= cost:
+            await self.update_user(
+                user_id,
+                delta_skelecoin=-cost if user.side == "skeletons" else 0,
+                delta_ghoultokens=-cost if user.side != "skeletons" else 0,
+            )
+            user.build_times[structure_name] = (
+                datetime.datetime.now() + datetime.timedelta(hours=1)
+            )
+            await ctx.send(f"{structure_name.capitalize()} will be built in 1 hour.")
+        else:
+            await ctx.send(f"Not enough coins to build {structure_name}.")
 
-                if (
-                    user.skelecoin if user.side == "skeletons" else user.ghoultokens
-                ) >= structure_cost:
-                    # Deduct the cost and build the structure
-                    if user.side == "skeletons":
-                        user.skelecoin -= structure_cost
-                    else:
-                        user.ghoultokens -= structure_cost
-                    user.structures[unit_name] = True
-                    await ctx.send(
-                        f"{unit_name.capitalize()} built successfully! It enhances your army's power."
-                    )
-                else:
-                    await ctx.send(
-                        f"Not enough currency to build {unit_name}. Cost: {structure_cost}"
-                    )
-            return
-
-        # Handle regular unit buying
+    async def buy_unit(self, ctx, user_id, unit_name):
+        user = self.state["users"][user_id]
+        side_units = SKELETON_UNITS if user.side == "skeletons" else GHOUL_UNITS
+        resource = "bones" if user.side == "skeletons" else "cursed_meat"
         unit_cost = side_units[unit_name]["cost"]
-        currency = user.skelecoin if user.side == "skeletons" else user.ghoultokens
 
-        if currency >= unit_cost:
-            if user.side == "skeletons":
-                user.skelecoin -= unit_cost
-            else:
-                user.ghoultokens -= unit_cost
+        if getattr(user, resource) >= unit_cost:
+            await self.update_user(
+                user_id,
+                delta_bones=-unit_cost if resource == "bones" else 0,
+                delta_cursed_meat=-unit_cost if resource == "cursed_meat" else 0,
+            )
             if unit_name in user.units:
                 user.units[unit_name]["quantity"] += 1
             else:
@@ -839,57 +1002,65 @@ class SpookyMonth(commands.Cog):
                     "quantity": 1,
                 }
             await ctx.send(
-                f"{unit_name.capitalize()} purchased! Remaining {user.side} currency: {currency}"
+                f"{unit_name.capitalize()} purchased! Remaining {resource}: {getattr(user, resource)}"
             )
         else:
             await ctx.send(
-                f"Not enough currency. {unit_name.capitalize()} costs {unit_cost}."
-            )
-
-    async def buy_mummy_part(self, ctx, user):
-        part_index = user.mummy_parts
-        if part_index >= len(MUMMY_PARTS_SEQUENCE):
-            await ctx.send(
-                "You have collected all the mummy parts. Use `>>buy_unit mummy` to assemble the mummy!"
-            )
-            return
-
-        part_cost = MUMMY_PART_COSTS[part_index]
-        if user.skelecoin >= part_cost:
-            user.skelecoin -= part_cost
-            user.mummy_parts += 1
-            part_name = MUMMY_PARTS_SEQUENCE[part_index]
-            await ctx.send(
-                f"Mummy part '{part_name}' purchased! Skelecoins left: {user.skelecoin}"
-            )
-            if user.mummy_parts == len(MUMMY_PARTS_SEQUENCE):
-                await ctx.send(
-                    "You have all the mummy parts! Use `>>buy_unit mummy` to assemble the mummy."
-                )
-        else:
-            await ctx.send(
-                f"Not enough Skelecoins. Mummy part '{MUMMY_PARTS_SEQUENCE[part_index]}' costs {part_cost} Skelecoins."
+                f"Not enough {resource}. {unit_name.capitalize()} costs {unit_cost}."
             )
 
     @commands.command("battle")
     async def battle(self, ctx, target: discord.User):
+        """
+        Initiates a battle between the command issuer (attacker) and the target user (defender).
+        The outcome of the battle depends on each player's power level and a random factor
+        to introduce variability.
+
+        Args:
+            ctx: Discord command context for the message author initiating the battle.
+            target (discord.User): The user to battle against.
+
+        Returns:
+            None
+        """
+        # Check if the target user is valid
+        if target is None or not isinstance(target, discord.User):
+            await ctx.send("Invalid target user!")
+            return
+
+        # Retrieve the attacker and defender user data from the state
         attacker = self.get_user(ctx.author.id)
         defender = self.get_user(target.id)
 
+        # Ensure the attacker and defender are on opposing sides
         if attacker.side == defender.side:
             await ctx.send("You cannot battle your own side!")
             return
 
-        # Introduce randomness so stronger power doesn't guarantee a win
+        # Calculate attack and defense rolls by multiplying power levels with a random factor
+        # This introduces a chance factor so higher power does not always guarantee a win
         attack_roll = attacker.get_power_level() * random.uniform(0.8, 1.2)
         defend_roll = defender.get_power_level() * random.uniform(0.8, 1.2)
 
+        # Choose an appropriate outcome message based on the result of the battle
+        # If the attacker wins, a skeleton or ghoul victory message is chosen based on the attacker's side
         if attack_roll > defend_roll:
-            await self.battle_victory(ctx, attacker, defender)
+            outcome_message = (
+                random.choice(self.battle_outcomes_skeleton)
+                if attacker.side == "skeletons"
+                else random.choice(self.battle_outcomes_ghoul)
+            )
+            await self.battle_victory(ctx, attacker, defender, outcome_message)
         else:
-            await self.battle_loss(ctx, attacker, defender)
+            # If the defender wins, an outcome message for the ghoul or skeleton victory is chosen based on the defender's side
+            outcome_message = (
+                random.choice(self.battle_outcomes_ghoul)
+                if defender.side == "ghouls"
+                else random.choice(self.battle_outcomes_skeleton)
+            )
+            await self.battle_loss(ctx, attacker, defender, outcome_message)
 
-    async def battle_victory(self, ctx, winner, loser):
+    async def battle_victory(self, ctx, winner, loser, outcome_message):
         winnings = int(
             0.2 * (loser.ghoultokens if winner.side == "ghouls" else loser.skelecoin)
         )
@@ -904,10 +1075,10 @@ class SpookyMonth(commands.Cog):
             random.choice([k for k, v in loser.structures.items() if v])
         ] = False
         await ctx.send(
-            f"{winner.side.capitalize()} wins! Looted {winnings} from {loser.side.capitalize()}."
+            f"{outcome_message} {winner.side.capitalize()} wins! Looted {winnings} from {loser.side.capitalize()}."
         )
 
-    async def battle_loss(self, ctx, loser, winner):
+    async def battle_loss(self, ctx, loser, winner, outcome_message):
         loss = int(
             0.5 * (loser.ghoultokens if loser.side == "ghouls" else loser.skelecoin)
         )
@@ -916,14 +1087,8 @@ class SpookyMonth(commands.Cog):
         else:
             loser.skelecoin -= loss
         await ctx.send(
-            f"{loser.side.capitalize()} loses the battle and forfeits {loss} currency."
+            f"{outcome_message} {loser.side.capitalize()} loses the battle and forfeits {loss} currency."
         )
-
-    # --- Utility ---
-    def get_user(self, user_id):
-        if user_id not in self.user_data:
-            self.user_data[user_id] = User()
-        return self.user_data[user_id]
 
 
 def setup(bot):
