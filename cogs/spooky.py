@@ -1127,7 +1127,7 @@ class SpookyMonth(commands.Cog):
     @commands.command("spooky_bases")
     async def spooky_bases(self, ctx):
         """
-        Shows a list of all available player bases, with a dynamic 'danger level' based on the user's own power level.
+        Shows a list of all available player bases.
         """
         # Get the command issuer's power level and side
         user_id = ctx.author.id
@@ -1178,10 +1178,16 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("join_skeletons")
     async def join_skeletons(self, ctx):
+        """
+        Game command: join the skeleton's side.
+        """
         await self.join_side(ctx, "skeletons")
 
     @commands.command("join_ghouls")
     async def join_ghouls(self, ctx):
+        """
+        Game command: join the ghoul's side.
+        """
         await self.join_side(ctx, "ghouls")
 
     @commands.command("base")
@@ -1296,8 +1302,7 @@ class SpookyMonth(commands.Cog):
     @commands.command("build")
     async def build(self, ctx, structure_name: str = None, quantity: int = 1):
         """
-        Allows users to build one or more instances of a structure in their base.
-        Specify the structure name and the quantity (default is 1).
+        Game command: build structurename quantity
         """
         if not structure_name:
             await ctx.send("Please specify a structure to build.")
@@ -1366,6 +1371,9 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("units")
     async def units(self, ctx):
+        """
+        Game command: allows users to see their units.
+        """
         user = await self.get_user(ctx.author.id)
         if not user or not user.side:
             await ctx.send(
@@ -1471,7 +1479,9 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("buy")
     async def buy(self, ctx, unit_name: str = None, quantity: int = 1):
-        """Allows users to buy units or parts for their side, with power cap enforcement and special messages cycling."""
+        """
+        Game command: buy unitname quantity
+        """
         if not unit_name:
             await ctx.send("Please specify a unit to buy.")
             return
@@ -1675,7 +1685,9 @@ class SpookyMonth(commands.Cog):
 
     @commands.command("raid")
     async def raid(self, ctx, target: discord.User):
-        """Raid a target to steal resources with a 50/50 success chance. Raiding costs currency and may result in unit loss on failure."""
+        """
+        Raid a target to steal resources. Raiding costs currency and may result in unit loss on failure.
+        """
         user_id = ctx.author.id
         user = await self.get_user(user_id)
         target_user = await self.get_user(target.id)
