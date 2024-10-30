@@ -40,6 +40,7 @@ STRUCTURE_COSTS = {
     "watchtower": 300,
     "barracks": 800,
     "remote_flesh_possessor": 10000,  # High cost for ghouls
+    "bean_hive": 6969,
 }
 SKELETON_STRUCTURE_COSTS = {
     "command_center": 3000,  # 1000 * 3
@@ -69,6 +70,24 @@ SKELETON_UNITS = {
     "brendan_fraser": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
 }
 
+ARTIFACTS = {
+    "chris": {
+        "description": "You found Chris! You put him to work in your mines. +20% resource collection rate.",
+        "type": "structure",
+        "effects": {"resource_collection": 0.2},
+    },
+    "steve_balmer": {
+        "description": "This mage gives your army a powerful motivation. +15% power level.",
+        "type": "structure",
+        "effects": {"power_level": 0.15},
+    },
+    "crobby": {
+        "description": "A peculiar bird joins your scouts, adding 500000 to power capacity.",
+        "type": "structure",
+        "effects": {"power_capacity": 500000},
+    },
+}
+
 
 @dataclass
 class User:
@@ -81,27 +100,45 @@ class User:
     side: str = ""
     structures: dict = field(
         default_factory=lambda: {
-            "command_center": True,
-            "refinery": False,
+            "command_center": 1,
+            "refinery": 0,
             "graveyard": 0,
-            "watchtower": False,
+            "watchtower": 0,
             "barracks": 0,
+            "remote_flesh_possessor": 0,
+            "legendary_tomb": 0,
         }
     )
     units: dict = field(default_factory=dict)
-    unlocked_units: list = field(default_factory=list)  # Track unlocked special units
+    unlocked_units: list = field(default_factory=list)
     mummy_parts: int = 0
     build_times: dict = field(default_factory=dict)
     last_interaction: float = field(default_factory=time.time)
-    last_barracks_built: datetime.datetime = None
 
     def get_power_level(self):
+        # Base power level from units
         total_power = sum(
             details["power"] * details["quantity"] for details in self.units.values()
         )
-        if self.structures.get("watchtower"):
-            total_power *= 1 + WATCHTOWER_POWER_BOOST
-        return int(total_power)
+        power_cap = (
+            BASE_POWER_CAP
+            + self.structures.get("barracks", 0) * BARRACKS_POWER_INCREMENT
+        )
+        effective_power = min(total_power, power_cap)
+
+        # Scale power level based on watchtower count
+        watchtower_count = self.structures.get("watchtower", 0)
+        if watchtower_count > 0:
+            effective_power *= (1 + WATCHTOWER_POWER_BOOST) ** watchtower_count
+
+        # Add power level modifiers from artifacts in structures
+        for structure, count in self.structures.items():
+            artifact_effect = (
+                ARTIFACTS.get(structure, {}).get("effects", {}).get("power_level", 0)
+            )
+            effective_power *= 1 + artifact_effect * count
+
+        return int(effective_power)
 
     def get_unit_count(self):
         return sum(details["quantity"] for details in self.units.values())
@@ -271,6 +308,22 @@ class SpookyMonth(commands.Cog):
         return int(effective_power)
 
     # Game addition
+
+    # Define methods to check secret conditions
+    def brendan_fraser_conditions_met(self, user):
+        # Check for the Legendary Tomb, mummy presence, and sufficient funds for Brendan Fraser
+        has_legendary_tomb = user.structures.get("legendary_tomb", False)
+        has_mummy = user.units.get("mummy", {}).get("quantity", 0) >= 1
+        return has_legendary_tomb and has_mummy
+
+    def beanglove_conditions_met(self, user):
+        # Check for the Remote Flesh Possessor and power level requirement for Beanglove
+        has_remote_flesh_possessor = user.structures.get(
+            "remote_flesh_possessor", False
+        )
+        sufficient_power_level = user.get_power_level() >= 1500
+        return has_remote_flesh_possessor and sufficient_power_level
+
     def load_battle_outcomes(self, filename, keyword=None):
         """
         Loads battle outcome messages from a specified text file, optionally filtered by a keyword.
@@ -389,7 +442,6 @@ class SpookyMonth(commands.Cog):
                             mummy_parts=v.get("mummy_parts", 0),
                             build_times=v.get("build_times", {}),
                             last_interaction=v.get("last_interaction", time.time()),
-                            last_barracks_built=v.get("last_barracks_built", None),
                         )
                     self.state.users = actual_state
                 logger.info("done reading state file")
@@ -457,6 +509,96 @@ class SpookyMonth(commands.Cog):
             return self.state.users[user_id]
         else:
             return User(0, 0)
+
+    async def battle_victory(self, ctx, winner, loser, outcome_message):
+        """
+        Handles the outcome of a battle, awarding resources to the winner and randomly decreasing the count
+        of a structure in the loser's base. If the loser has multiple structures, a random amount is reduced.
+        """
+        # Calculate loot based on the loser's resources
+        winnings = int(
+            0.2 * (loser.ghoultokens if winner.side == "ghouls" else loser.skelecoin)
+        )
+        currency_name = "ghoul tokens" if winner.side == "ghouls" else "skelecoin"
+
+        # Award loot to the winner and deduct from the loser
+        if winner.side == "ghouls":
+            winner.ghoultokens += winnings
+            loser.ghoultokens -= winnings
+        else:
+            winner.skelecoin += winnings
+            loser.skelecoin -= winnings
+
+        # Select a structure to damage and calculate the number to be removed
+        structure_to_damage = random.choice(
+            [k for k, v in loser.structures.items() if v > 0]
+        )
+        max_removal = max(1, loser.structures[structure_to_damage] // 2)
+        removal_count = random.randint(1, max_removal)
+
+        # Apply the structure loss to the selected structure
+        loser.structures[structure_to_damage] = max(
+            0, loser.structures[structure_to_damage] - removal_count
+        )
+
+        # If the structure count drops to zero, remove it from the dictionary
+        if loser.structures[structure_to_damage] == 0:
+            del loser.structures[structure_to_damage]
+
+        # Send the victory message with details of loot and structure damage
+        await ctx.send(
+            f"{outcome_message} {winner.side.capitalize()} wins! Looted {winnings} {currency_name} "
+            f"from {loser.side.capitalize()}.\n"
+            f"The battle caused {removal_count} {structure_to_damage}(s) to be destroyed in the loser's base."
+        )
+
+        # Record the battle outcome and update the game state
+        await self.record_battle(winner.side, loser.side, "Victory")
+        await self.write_state()
+
+    async def battle_loss(self, ctx, loser):
+        """
+        Handles the consequences for the losing side in a battle. Reduces a random structure's count and deducts resources.
+        """
+        # Randomly select a structure to lose instances
+        structure_to_damage = random.choice(
+            [k for k, v in loser.structures.items() if v > 0]
+        )
+        max_removal = max(1, loser.structures[structure_to_damage] // 2)
+        removal_count = random.randint(1, max_removal)
+
+        # Apply the structure loss to the selected structure
+        loser.structures[structure_to_damage] = max(
+            0, loser.structures[structure_to_damage] - removal_count
+        )
+
+        # If the structure count drops to zero, remove it from the dictionary
+        if loser.structures[structure_to_damage] == 0:
+            del loser.structures[structure_to_damage]
+
+        # Calculate a penalty in resources or currency if applicable
+        penalty_percentage = 0.1  # Deduct 10% of the loser's currency as a penalty
+        currency_deduction = int(
+            (loser.ghoultokens if loser.side == "ghouls" else loser.skelecoin)
+            * penalty_percentage
+        )
+        currency_name = "ghoul tokens" if loser.side == "ghouls" else "skelecoin"
+
+        # Deduct the penalty currency from the loser
+        if loser.side == "ghouls":
+            loser.ghoultokens -= currency_deduction
+        else:
+            loser.skelecoin -= currency_deduction
+
+        # Send a message about the losses
+        await ctx.send(
+            f"Battle loss consequences:\n"
+            f"- {removal_count} {structure_to_damage}(s) were destroyed in your base.\n"
+            f"- {currency_deduction} {currency_name} was deducted as a penalty."
+        )
+
+        # Update the game state
+        await self.write_state()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -1056,7 +1198,7 @@ class SpookyMonth(commands.Cog):
 
         await self.update_resources_since_last_interaction(
             user_id
-        )  # update user resource state
+        )  # Update user resource state
         if not user:
             await ctx.send(
                 "You have not joined a side yet! Use `>>join_ghouls` or `>>join_skeletons` to get started."
@@ -1081,37 +1223,27 @@ class SpookyMonth(commands.Cog):
         built_structures = "**Built:**\n"
         available_structures = "\n**Available to build:**\n"
 
-        # Get the special structure name based on side
-        special_structure = (
-            "legendary_tomb" if user.side == "skeletons" else "remote_flesh_possessor"
-        )
-
-        # Process all structures including special structures
+        # Process all structures and display counts
         for name, cost in structure_costs.items():
-            built = user.structures.get(name, False)
+            count = user.structures.get(name, 0)
 
             # Add to built structures if it exists
-            if built:
-                if isinstance(built, bool):
-                    built_structures += f"{name} x1\n"
-                else:
-                    built_structures += f"{name} x{built}\n"
+            if count > 0:
+                built_structures += f"{name} x{count}\n"
 
-            # Skip structures that can only be built once if already built
-            if name in ["command_center", "refinery"] and built:
-                continue
+            # Display structures in "Available to build" section if they can be built or upgraded
+            # Ensure "bean_hive" is only shown if "remote_flesh_possessor" has been built
+            if name == "bean_hive" and not user.structures.get(
+                "remote_flesh_possessor", False
+            ):
+                continue  # Skip bean_hive if remote_flesh_possessor isn't built
 
-            # Add to available structures if not built or can build multiple
-            if not built or isinstance(built, int):
-                available_structures += f"{name}: "
-                available_structures += "Built" if built else "Not built"
-                cost_text = f" (Cost: {cost} {currency}"
-                cost_text += " each)" if isinstance(built, int) else ")"
-                available_structures += cost_text + "\n"
+            if name not in ["command_center"] or count == 0:
+                available_structures += f"{name} - Cost: {cost} {currency} each\n"
 
         # Calculate resource generation rates if structures are built
         graveyard_count = user.structures.get("graveyard", 0)
-        refinery_built = user.structures.get("refinery", False)
+        refinery_built = user.structures.get("refinery", 0)
 
         # Display current resources with generation rates
         resources_info = f"\n**Resources:**"
@@ -1138,6 +1270,12 @@ class SpookyMonth(commands.Cog):
                 f"\nCursed Meat: {user.cursed_meat:.3f} (+{cursed_meat_rate:.3f}/s)"
             )
 
+        # Display artifacts that affect resource collection rates
+        artifacts_info = "\n**Resource Collection Artifacts:**\n"
+        for artifact, data in ARTIFACTS.items():
+            if artifact in user.structures and "resource_collection" in data["effects"]:
+                artifacts_info += f"{artifact.replace('_', ' ').capitalize()} - {data['description']}\n"
+
         # Display current currency at the bottom in bold
         currency_info = (
             f"\n\n**Your current {currency.capitalize()}: {currency_amount}**"
@@ -1149,6 +1287,7 @@ class SpookyMonth(commands.Cog):
             + built_structures
             + available_structures
             + resources_info
+            + artifacts_info
             + currency_info
         )
 
@@ -1157,82 +1296,69 @@ class SpookyMonth(commands.Cog):
     @commands.command("build")
     async def build(self, ctx, structure_name: str = None, quantity: int = 1):
         """
-        Build one or more instances of a structure for your base.
+        Allows users to build one or more instances of a structure in their base.
         Specify the structure name and the quantity (default is 1).
         """
         if not structure_name:
             await ctx.send("Please specify a structure to build.")
             return
 
-        # Ensure quantity is a positive number
-        if quantity <= 0:
-            await ctx.send("You need to buy at least one of a structure!")
-            return
-
+        # Get the user and check if they are part of a side
         user_id = ctx.author.id
         user = self.state.users.get(user_id)
 
-        await self.update_resources_since_last_interaction(user_id)  # Update resources
+        await self.update_resources_since_last_interaction(
+            user_id
+        )  # Update resource state
 
         if not user or not user.side:
-            await ctx.send("You need to join a side first!")
+            await ctx.send(
+                "Please join a side first by using `>>join_skeletons` or `>>join_ghouls`."
+            )
             return
 
+        # Determine currency and structure costs based on side
         structure_costs = (
             SKELETON_STRUCTURE_COSTS if user.side == "skeletons" else STRUCTURE_COSTS
         )
+        currency = "skelecoin" if user.side == "skeletons" else "ghoultokens"
+        user_currency = getattr(user, currency)
         structure_name = structure_name.lower().replace(" ", "_")
 
+        # Ensure bean_hive can only be built if remote_flesh_possessor exists
+        if structure_name == "bean_hive" and not user.structures.get(
+            "remote_flesh_possessor", False
+        ):
+            await ctx.send(
+                "You need to build the Remote Flesh Possessor to construct a Bean Hive."
+            )
+            return
+
+        # Check if the specified structure is valid
         if structure_name not in structure_costs:
             await ctx.send(f"{structure_name} is not a valid structure.")
             return
 
+        # Calculate the total cost for the desired quantity
         cost_per_structure = structure_costs[structure_name]
         total_cost = cost_per_structure * quantity
-        currency = "skelecoin" if user.side == "skeletons" else "ghoul tokens"
-        user_currency = user.skelecoin if user.side == "skeletons" else user.ghoultokens
 
-        # Check if the player has enough currency
+        # Check if the user has enough currency
         if user_currency < total_cost:
             await ctx.send(
-                f"You don't have enough {currency} to build {quantity} {structure_name}(s)!"
+                f"You don't have enough {currency} to build {quantity} {structure_name}(s)."
             )
             return
 
-        # Check for single-instance structures and restrict to one purchase
-        if structure_name in [
-            "command_center",
-            "legendary_tomb",
-            "remote_flesh_possessor",
-        ]:
-            if user.structures.get(structure_name, False):
-                await ctx.send(
-                    f"You have already built a {structure_name} and can only have one!"
-                )
-                return
-            quantity = 1  # Override to a single purchase for unique structures
-
         # Deduct the total cost and update the currency
-        if user.side == "skeletons":
-            user.skelecoin -= total_cost
-        else:
-            user.ghoultokens -= total_cost
+        setattr(user, currency, user_currency - total_cost)
 
         # Update the structure count for buildings that can have multiple instances
-        if structure_name == "barracks":
-            # Increase the barracks count and power cap by the specified quantity
-            current_barracks = user.structures.get("barracks", 0)
-            user.structures["barracks"] = current_barracks + quantity
-        elif structure_name in ["refinery", "graveyard", "watchtower"]:
-            # Update count for other multi-instance buildings
-            current_count = user.structures.get(structure_name, 0)
-            if isinstance(current_count, bool):
-                current_count = 1 if current_count else 0
-            user.structures[structure_name] = current_count + quantity
-        else:
-            # Single-instance structures are just marked as True
-            user.structures[structure_name] = True
+        user.structures[structure_name] = (
+            user.structures.get(structure_name, 0) + quantity
+        )
 
+        # Send confirmation message to the user
         await ctx.send(
             f"Successfully built {quantity} {structure_name}(s) for {total_cost} {currency}."
         )
@@ -1252,13 +1378,35 @@ class SpookyMonth(commands.Cog):
 
         # List current units
         for unit, details in user.units.items():
-            units_info += f"`{unit.capitalize()} - Power: {details['power']}, Quantity: {details['quantity']}`\n"
+            units_info += f"`{unit} - Power: {details['power']}, Quantity: {details['quantity']}`\n"
 
-        total_power = user.get_power_level()
+        # Calculate total power, including artifact bonuses
+        base_power = user.get_power_level()
         power_cap = (
             BASE_POWER_CAP
             + user.structures.get("barracks", 0) * BARRACKS_POWER_INCREMENT
         )
+
+        # Apply artifact effects on power level and power capacity
+        artifact_power_multiplier = 1
+        artifact_power_capacity_bonus = 0
+        for artifact, data in ARTIFACTS.items():
+            if artifact in user.structures:
+                effect = data["effects"]
+                # Only apply power level and capacity effects here
+                if "power_level" in effect:
+                    artifact_power_multiplier += effect["power_level"]
+                if "power_capacity" in effect:
+                    artifact_power_capacity_bonus += effect["power_capacity"]
+
+        # Calculate effective power level with artifact multiplier
+        effective_power = min(
+            int(base_power * artifact_power_multiplier),
+            power_cap + artifact_power_capacity_bonus,
+        )
+
+        # Display power level, cap, and artifact effects
+        units_info += f"```\nTotal Power Level: {effective_power}/{power_cap + artifact_power_capacity_bonus} (Power Cap)\n"
 
         # Scaled watchtower multiplier based on count
         watchtower_count = user.structures.get("watchtower", 0)
@@ -1267,48 +1415,59 @@ class SpookyMonth(commands.Cog):
             if watchtower_count > 0
             else 1
         )
-        additional_power_bonus = int(total_power * (watchtower_multiplier - 1))
+        additional_power_bonus = int(effective_power * (watchtower_multiplier - 1))
 
-        # Display power level, cap, and watchtower effect
-        units_info += f"```\nTotal Power Level: {total_power}/{power_cap} (Power Cap)\n"
         if watchtower_count > 0:
             units_info += f"Watchtower Multiplier (x{watchtower_count}): x{watchtower_multiplier:.2f}\n"
-            units_info += f"Additional Power Bonus from Watchtowers: +{additional_power_bonus}\n\n```"
+            units_info += (
+                f"Additional Power Bonus from Watchtowers: +{additional_power_bonus}\n"
+            )
 
-        # List available units for purchase with Remote Flesh Possessor requirement
+        # Display additional bonuses from artifacts if they exist
+        if artifact_power_capacity_bonus > 0:
+            units_info += f"Additional Capacity Bonus from Artifacts: +{artifact_power_capacity_bonus}\n"
+        if artifact_power_multiplier > 1:
+            additional_artifact_power_bonus = int(
+                base_power * (artifact_power_multiplier - 1)
+            )
+            units_info += f"Additional Power Bonus from Artifacts: +{additional_artifact_power_bonus}\n"
+
+        units_info += "```\n"
+
+        # List available units for purchase, including artifact requirements
         units_info += "\n**Available Units for Purchase:**\n"
         for unit, details in side_units.items():
+            # Mummy: only available if all parts are collected
             if unit == "mummy" and user.mummy_parts < len(MUMMY_PARTS_SEQUENCE):
                 continue
+
+            # Special structure requirements for units requiring Remote Flesh Possessor
             if unit in [
                 "beanglove",
-                "giant ghoul",
-                "zombie giant",
+                "giant_ghoul",
+                "zombie_giant",
             ] and not user.structures.get("remote_flesh_possessor", False):
                 continue
+            if unit == "brendan_fraser" and not user.structures.get(
+                "legendary_tomb", False
+            ):
+                continue
 
-            units_info += f"{unit.capitalize()} - Power: {details['power']}, Cost: {details['cost']}\n"
+            units_info += (
+                f"{unit} - Power: {details['power']}, Cost: {details['cost']}\n"
+            )
 
         if user.side == "skeletons":
             mummy_info = f"\nMummy Parts Collected: {user.mummy_parts}/{len(MUMMY_PARTS_SEQUENCE)}"
             units_info += mummy_info
 
+        # Display only power-related artifacts
+        units_info += "\n\n**Power Artifacts:**\n"
+        for artifact, data in ARTIFACTS.items():
+            if artifact in user.structures and "power_level" in data["effects"]:
+                units_info += f"{artifact.replace('_', ' ').capitalize()} - {data['description']}\n"
+
         await ctx.send(units_info)
-
-    # Define methods to check secret conditions
-    def brendan_fraser_conditions_met(self, user):
-        # Check for the Legendary Tomb, mummy presence, and sufficient funds for Brendan Fraser
-        has_legendary_tomb = user.structures.get("legendary_tomb", False)
-        has_mummy = user.units.get("mummy", {}).get("quantity", 0) >= 1
-        return has_legendary_tomb and has_mummy
-
-    def beanglove_conditions_met(self, user):
-        # Check for the Remote Flesh Possessor and power level requirement for Beanglove
-        has_remote_flesh_possessor = user.structures.get(
-            "remote_flesh_possessor", False
-        )
-        sufficient_power_level = user.get_power_level() >= 1500
-        return has_remote_flesh_possessor and sufficient_power_level
 
     @commands.command("buy")
     async def buy(self, ctx, unit_name: str = None, quantity: int = 1):
@@ -1333,16 +1492,73 @@ class SpookyMonth(commands.Cog):
         currency = "bones" if user.side == "skeletons" else "cursed_meat"
         user_currency = getattr(user, currency)
 
-        # Restrict special units based on structures
-        if unit_name in [
-            "beanglove",
-            "giant ghoul",
-            "zombie giant",
-        ] and not user.structures.get("remote_flesh_possessor", False):
+        # Handle mummy part purchases specifically
+        if unit_name == "mummy_part":
+            # Determine the specific cost based on the current part needed
+            part_index = user.mummy_parts
+            if part_index >= len(MUMMY_PART_COSTS):
+                await ctx.send("You have already collected all mummy parts.")
+                return
+
+            part_cost = MUMMY_PART_COSTS[part_index]
+            if user_currency < part_cost:
+                await ctx.send(
+                    f"You don't have enough {currency} to buy the next mummy part."
+                )
+                return
+
+            # Deduct the cost and update mummy parts
+            setattr(user, currency, user_currency - part_cost)
+            user.mummy_parts += 1
             await ctx.send(
-                "You need to build the Remote Flesh Possessor to purchase this unit."
+                f"Successfully bought mummy part '{MUMMY_PARTS_SEQUENCE[part_index]}' for {part_cost} {currency}."
             )
+
+            # Check if all parts have been collected to unlock the mummy
+            if user.mummy_parts == len(MUMMY_PARTS_SEQUENCE):
+                user.units["mummy"] = user.units.get(
+                    "mummy", {"power": side_units["mummy"]["power"], "quantity": 0}
+                )
+                user.units["mummy"]["quantity"] += 1
+                user.mummy_parts = 0  # Reset mummy parts
+                await ctx.send(
+                    "You have assembled a full Mummy! Mummy parts have been reset."
+                )
+
+            await self.write_state()
             return
+
+        # Restrict purchase of units based on required structures
+        if unit_name == "beanglove":
+            # Check if remote_flesh_possessor is built to unlock Beanglove
+            if not user.structures.get("remote_flesh_possessor", False):
+                await ctx.send(
+                    "You need to build the Remote Flesh Possessor to unlock Beanglove."
+                )
+                return
+            # Check if the user has enough bean_hive structures to purchase Beanglove
+            if user.structures.get("bean_hive", 0) < quantity:
+                await ctx.send(
+                    f"You need at least {quantity} Bean Hive(s) to buy {quantity} Beanglove unit(s)."
+                )
+                return
+        if unit_name == "brendan_fraser":
+            # Check for Legendary Tomb and specific requirements for mummies and tombs
+            if not user.structures.get("legendary_tomb", False):
+                await ctx.send(
+                    "You need to build the Legendary Tomb to purchase Brendan Fraser."
+                )
+                return
+            if user.units.get("mummy", {}).get("quantity", 0) < 1:
+                await ctx.send(
+                    "You need at least one mummy to purchase Brendan Fraser."
+                )
+                return
+            if user.structures.get("tomb", 0) < quantity:
+                await ctx.send(
+                    f"You need at least {quantity} tomb(s) to buy {quantity} Brendan Fraser unit(s)."
+                )
+                return
 
         # Special messages for Brendan Fraser and Beanglove, cycle through the list
         special_messages = {
@@ -1417,9 +1633,7 @@ class SpookyMonth(commands.Cog):
         unit_name = unit_name.lower()
         unit_details = side_units.get(unit_name)
         if not unit_details:
-            await ctx.send(
-                f"{unit_name.capitalize()} is not a valid unit for your side."
-            )
+            await ctx.send(f"{unit_name} is not a valid unit for your side.")
             return
 
         total_cost = unit_details["cost"] * quantity
@@ -1459,6 +1673,153 @@ class SpookyMonth(commands.Cog):
         )
         await self.write_state()
 
+    @commands.command("raid")
+    async def raid(self, ctx, target: discord.User):
+        """Raid a target to steal resources with a 50/50 success chance. Raiding costs currency and may result in unit loss on failure."""
+        user_id = ctx.author.id
+        user = await self.get_user(user_id)
+        target_user = await self.get_user(target.id)
+
+        # Verify that both users are valid and on opposing sides
+        if (
+            not user
+            or not user.side
+            or not target_user
+            or target_user.side == user.side
+        ):
+            await ctx.send("You can only raid an enemy player.")
+            return
+
+        # Determine the respective currencies
+        currency = "bones" if user.side == "skeletons" else "cursed_meat"
+        raid_cost = 100  # Set a cost for raiding; adjust as needed
+        user_currency = getattr(user, currency)
+
+        # Check if the player has enough currency to raid
+        if user_currency < raid_cost:
+            await ctx.send(
+                f"You need at least {raid_cost} {currency} to initiate a raid."
+            )
+            return
+
+        # Deduct raid cost
+        setattr(user, currency, user_currency - raid_cost)
+
+        # 50/50 chance of success
+        raid_success = random.choice([True, False])
+        if raid_success:
+            # Success: steal 5-20% of the target's resources
+            steal_percentage = random.uniform(0.05, 0.2)
+            stolen_coins = int(
+                target_user.skelecoin * steal_percentage
+                if target_user.side == "skeletons"
+                else target_user.ghoultokens * steal_percentage
+            )
+            stolen_resources = int(getattr(target_user, currency) * steal_percentage)
+
+            # Update target's resources and transfer to raider
+            if target_user.side == "skeletons":
+                target_user.skelecoin -= stolen_coins
+                user.skelecoin += stolen_coins
+            else:
+                target_user.ghoultokens -= stolen_coins
+                user.ghoultokens += stolen_coins
+
+            setattr(
+                target_user, currency, getattr(target_user, currency) - stolen_resources
+            )
+            setattr(user, currency, getattr(user, currency) + stolen_resources)
+
+            await ctx.send(
+                f"Raid successful! You stole {stolen_coins} coins and {stolen_resources} {currency} from {target.display_name}."
+            )
+        else:
+            # Failure: lose up to 30% of non-special units
+            await ctx.send("Raid failed!")
+            non_special_units = {
+                u: d
+                for u, d in user.units.items()
+                if u not in ["beanglove", "brendan_fraser"]
+            }
+            total_units = sum(d["quantity"] for d in non_special_units.values())
+            units_to_lose = random.randint(1, max(1, int(total_units * 0.3)))
+
+            units_lost = {}
+            while units_to_lose > 0 and non_special_units:
+                unit = random.choice(list(non_special_units.keys()))
+                if non_special_units[unit]["quantity"] <= units_to_lose:
+                    units_to_lose -= non_special_units[unit]["quantity"]
+                    units_lost[unit] = non_special_units[unit]["quantity"]
+                    del user.units[unit]  # Remove unit entirely if quantity is depleted
+                else:
+                    user.units[unit]["quantity"] -= units_to_lose
+                    units_lost[unit] = units_to_lose
+                    units_to_lose = 0
+
+            # Display lost units
+            lost_units_message = ", ".join(
+                [f"{unit} x{qty}" for unit, qty in units_lost.items()]
+            )
+            await ctx.send(
+                f"As a consequence, you lost the following units: {lost_units_message}."
+            )
+
+        await self.write_state()
+
+    @commands.command("expedition")
+    async def expedition(self, ctx):
+        """
+        Launches a daily expedition if the player has special units, with a chance of finding unique artifacts.
+        """
+        user_id = ctx.author.id
+        user = self.state.users.get(user_id)
+
+        # Check if user has special units
+        special_units = ["beanglove", "brendan_fraser"]
+        if not any(unit in user.units for unit in special_units):
+            await ctx.send("You need a special unit to launch an expedition.")
+            return
+
+        # Check cooldown (once per day)
+        last_expedition_time = user.build_times.get("last_expedition")
+        now = datetime.datetime.now()
+        if last_expedition_time and now - last_expedition_time < datetime.timedelta(
+            days=1
+        ):
+            await ctx.send(
+                "You can only go on an expedition once per day. Try again tomorrow!"
+            )
+            return
+
+        # Record current time as last expedition time
+        user.build_times["last_expedition"] = now
+
+        # Expedition result
+        found_artifact = random.choice([True, False, False, False])  # 25% chance
+        if found_artifact:
+            artifact_name, artifact_details = random.choice(list(ARTIFACTS.items()))
+            description = artifact_details["description"]
+
+            # Update user units or structures with the artifact
+            if artifact_name not in user.structures:
+                user.structures[artifact_name] = 1
+            else:
+                user.structures[artifact_name] += 1
+
+            # Display unique, styled message
+            await ctx.send(
+                f"🎉 **Expedition Success!** 🎉\n"
+                f"You discovered the **{artifact_name.replace('_', ' ').title()}**!\n"
+                f"{description}"
+            )
+        else:
+            await ctx.send(
+                "Your expedition was thrilling, but no artifacts were found this time."
+            )
+
+        await self.write_state()
+
+    @commands.command("battle")
     async def battle(self, ctx, target: discord.User):
         """
         Initiates a battle between the command issuer (attacker) and the target user (defender).
@@ -1563,70 +1924,6 @@ class SpookyMonth(commands.Cog):
         attacker.units = attacker.remaining_units
         defender.units = defender.remaining_units
         await self.write_state()
-
-    async def battle_victory(self, ctx, winner, loser, outcome_message):
-        winnings = int(
-            0.2 * (loser.ghoultokens if winner.side == "ghouls" else loser.skelecoin)
-        )
-        currency_name = "ghoul tokens" if winner.side == "ghouls" else "skelecoin"
-
-        # Update winner and loser currency
-        if winner.side == "ghouls":
-            winner.ghoultokens += winnings
-            loser.ghoultokens -= winnings
-        else:
-            winner.skelecoin += winnings
-            loser.skelecoin -= winnings
-
-        # Select a random structure to "damage"
-        structure_to_damage = random.choice(
-            [k for k, v in loser.structures.items() if v]
-        )
-        if (
-            isinstance(loser.structures[structure_to_damage], int)
-            and loser.structures[structure_to_damage] > 1
-        ):
-            # Calculate a multiplier-based removal
-            max_removal = max(1, loser.structures[structure_to_damage] // 2)
-            removal_count = random.randint(1, max_removal)
-
-            # Ensure the count doesn’t go below zero
-            loser.structures[structure_to_damage] = max(
-                0, loser.structures[structure_to_damage] - removal_count
-            )
-
-            # If structure count drops to zero, reset to `False`
-            if loser.structures[structure_to_damage] == 0:
-                loser.structures[structure_to_damage] = False
-        else:
-            # Set to False for single-instance structures
-            loser.structures[structure_to_damage] = False
-
-        # Send the victory message with the correct currency label
-        await ctx.send(
-            f"{outcome_message} {winner.side.capitalize()} wins! Looted {winnings} {currency_name} from {loser.side.capitalize()}."
-        )
-        await self.record_battle(winner.side, loser.side, "Victory")
-
-    async def battle_loss(self, ctx, loser, winner, outcome_message):
-        user_id = ctx.author.id
-        await self.update_resources_since_last_interaction(user_id)  # update resources
-        """
-        When the player loses an attack, 50% of their currency is transferred to the defender.
-        """
-        loss = int(
-            0.5 * (loser.ghoultokens if loser.side == "ghouls" else loser.skelecoin)
-        )
-        if loser.side == "ghouls":
-            loser.ghoultokens -= loss
-            winner.ghoultokens += loss  # Add loss to the winner
-        else:
-            loser.skelecoin -= loss
-            winner.skelecoin += loss  # Add loss to the winner
-        await ctx.send(
-            f"{outcome_message} {loser.side.capitalize()} loses the battle and forfeits {loss} currency to {winner.side.capitalize()}."
-        )
-        await self.record_battle(loser.side, winner.side, "Loss")
 
 
 async def setup(bot):
