@@ -1164,11 +1164,11 @@ class SpookyMonth(commands.Cog):
             # Mark enemy bases with a warning symbol and distinguish them from allies
             if other_user.side == user_side:
                 base_list += (
-                    f"🛡️ Ally: `{display_name}` - Danger Level: {danger_level}\n"
+                    f"🛡️ Ally: `{display_name}` - Spooky Level: {danger_level}\n"
                 )
             else:
                 base_list += (
-                    f"⚔️ Enemy: `{display_name}` - Danger Level: {danger_level}\n"
+                    f"⚔️ Enemy: `{display_name}` - Spooky Level: {danger_level}\n"
                 )
 
         if base_list:
