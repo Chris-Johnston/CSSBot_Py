@@ -55,16 +55,16 @@ WATCHTOWER_POWER_BOOST = 0.01  # Boost percentage for army power level
 
 # Define units, including secret units, but make them inaccessible initially
 GHOUL_UNITS = {
-    "ghouls": {"power": 10, "cost": 20},
-    "wraiths": {"power": 20, "cost": 50},
-    "ghosts": {"power": 30, "cost": 75},
-    "zombies": {"power": 40, "cost": 100},
+    "ghoul": {"power": 10, "cost": 20},
+    "wraith": {"power": 20, "cost": 50},
+    "ghost": {"power": 30, "cost": 75},
+    "zombie": {"power": 40, "cost": 100},
     "giant_ghoul": {"power": 100, "cost": 300},
     "zombie_giant": {"power": 500, "cost": 1000},  # Secret unit, initially locked
     "beanglove": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
 }
 SKELETON_UNITS = {
-    "skeletons": {"power": 10, "cost": 20},
+    "skeleton": {"power": 10, "cost": 20},
     "mummy_part": {"power": 0, "cost": MUMMY_PART_COSTS},
     "mummy": {"power": 1000, "cost": sum(MUMMY_PART_COSTS)},
     "brendan_fraser": {"power": 5000, "cost": 3000},  # Secret unit, initially locked
