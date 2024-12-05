@@ -59,6 +59,7 @@ class AdventOfCodeCog(commands.Cog):
         self.last_request_time = None
         self.last_request = None
         self.whitelist_guild = None
+        self.year = 2024
 
         if config.has_option(section='Configuration',
                              option='advent_leaderboard_id'):
@@ -79,9 +80,11 @@ class AdventOfCodeCog(commands.Cog):
                              option='advent_guild'):
             self.whitelist_guild = config.get(section='Configuration',
                               option='advent_guild')
+        if config.has_option(section='Configuration', option='advent_year'):
+            self.year = int(config.get(section='Configuration', option='advent_year'))
 
     def get_request_url(self) -> str:
-        return f"https://adventofcode.com/2023/leaderboard/private/view/{self.leaderboard_id}.json"
+        return f"https://adventofcode.com/{self.year}/leaderboard/private/view/{self.leaderboard_id}.json"
 
     def request(self):
         """
