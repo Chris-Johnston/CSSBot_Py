@@ -177,7 +177,7 @@ class AdventOfCodeCog(commands.Cog):
         last_score = 99999
         for idx, val in enumerate(members):
             total_stars += val.stars
-            if idx < 20:
+            if idx < 20 and val.stars > 0:
                 date = ""
                 if val.last_star_ts is not None:
                     date = val.last_star_ts.strftime("%b %d %-I:%M %p")
