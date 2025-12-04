@@ -108,8 +108,8 @@ class BasicCog(commands.Cog):
             await ctx.send("gottem")
             return
 
-        webcam_url = "http://69.91.192.220/nph-jpeg.cgi"
-        message_content = f'<http://69.91.192.220/nph-jpeg.cgi?0&{time.time()}>'
+        webcam_url = "https://camera.uwb.edu/nph-jpeg.cgi"
+        message_content = f'<https://camera.uwb.edu/nph-jpeg.cgi?0&{time.time()}>'
 
         r = requests.get(webcam_url)
         f = discord.File(BytesIO(r.content), filename=f"webcam{time.time()}.jpg")
