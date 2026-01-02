@@ -17,7 +17,10 @@ import os
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# invite_tracking contains a dict of the user and the invite link they joined with
 invite_filename = "invite_tracking.json"
+# this contains all known invite links
+invite_links_filename = "invite_links.json"
 # hyper-specific for a single guild
 target_guild = 297485054836342786
 
@@ -46,12 +49,19 @@ class NoFreakinTutors(commands.Cog):
         # dictionary of invite links, key is link, value is the count of used
         # this is fetched on guild available, and checked when new users join
         self.invite_links = {}
+
+        # this contains all known invite_links, where the key is the invite link and the value
+        # is the creator user id
+        self.all_known_invite_links = {}
     
     def update_tracking_file(self):
         logger.debug("Updating invite tracking json")
 
         with open(invite_filename, 'wt') as f:
             f.write(json.dumps(self.invite_source))
+
+        with open(invite_links_filename, 'w') as f:
+            f.write(json.dumps(self.all_known_invite_links))
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
@@ -65,6 +75,10 @@ class NoFreakinTutors(commands.Cog):
             uses = inv.uses or 0
             owner = inv.inviter.id
             self.invite_links[invite_id] = f"{uses},{owner}"
+
+            self.all_known_invite_links[invite_id] = owner
+        
+        self.update_tracking_file()
 
     # this does not seem to fire ever
     @commands.Cog.listener()
@@ -81,6 +95,9 @@ class NoFreakinTutors(commands.Cog):
         owner = invite.inviter.id
         logger.info(f"new invite {invite_id} created by user {owner}")
         self.invite_links[invite_id] = f"0,{owner}"
+
+        self.all_known_invite_links[invite_id] = owner
+        self.update_tracking_file()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -101,6 +118,8 @@ class NoFreakinTutors(commands.Cog):
             uses = inv.uses or 0
             owner = inv.inviter.id
             val = f"{uses},{owner}"
+
+            self.all_known_invite_links[invite_id] = owner
             # self.invite_links[invite_id] = f"{uses},{owner}"
 
             if invite_id in old_invite_states:
