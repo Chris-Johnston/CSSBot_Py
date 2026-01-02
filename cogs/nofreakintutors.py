@@ -45,14 +45,24 @@ class NoFreakinTutors(commands.Cog):
                     logger.warn(f"opened invite source file, len = {len(self.invite_source)}")
             except Exception as e:
                 logger.warn(f"Failed to open invite tracking json file {e}")
+        
+        if not os.path.exists(invite_links_filename):
+            logger.warn("all invite links json does not exist")
+            self.all_known_invite_links = {}
+        else:
+            try:
+                with open(invite_links_filename, 'rt') as f:
+                    # this contains all known invite_links, where the key is the invite link and the value
+                    # is the creator user id
+                    self.all_known_invite_links = json.loads(f.read())
+
+                    logger.warn(f"opened invite source file, len = {len(self.all_known_invite_links)}")
+            except Exception as e:
+                logger.warn(f"Failed to open all invites json file {e}")
 
         # dictionary of invite links, key is link, value is the count of used
         # this is fetched on guild available, and checked when new users join
         self.invite_links = {}
-
-        # this contains all known invite_links, where the key is the invite link and the value
-        # is the creator user id
-        self.all_known_invite_links = {}
     
     def update_tracking_file(self):
         logger.debug("Updating invite tracking json")
@@ -60,7 +70,7 @@ class NoFreakinTutors(commands.Cog):
         with open(invite_filename, 'wt') as f:
             f.write(json.dumps(self.invite_source))
 
-        with open(invite_links_filename, 'w') as f:
+        with open(invite_links_filename, 'wt') as f:
             f.write(json.dumps(self.all_known_invite_links))
 
     @commands.Cog.listener()
