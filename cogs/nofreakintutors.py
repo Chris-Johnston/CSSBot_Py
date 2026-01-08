@@ -139,7 +139,7 @@ class NoFreakinTutors(commands.Cog):
                     probably_used_invite_id = invite_id
                     self.invite_links[invite_id] = val
 
-                    self.invite_source[f"{owner}"] = invite_id
+                    self.invite_source[f"{joined_id}"] = invite_id
                     self.update_tracking_file()
             else:
                 # new invite which did not exist before
@@ -147,7 +147,7 @@ class NoFreakinTutors(commands.Cog):
                     logger.warn(f"probably joined from a new to me invite {invite_id}")
                     probably_used_invite_id = invite_id
 
-                    self.invite_source[f"{owner}"] = invite_id
+                    self.invite_source[f"{joined_id}"] = invite_id
                     self.update_tracking_file()
 
                 # this is now known
