@@ -76,6 +76,7 @@ def get_sendoff():
         "FRIGHTENING",
         "PUMPKIN",
         "DAY",
+        "SPIDER",
         "",
         "OCTOBER",
         "GHOULISH",
@@ -87,6 +88,10 @@ def get_sendoff():
         "TRANSACTIONAL",
         "${ADJECTIVE}"
     ]
+
+    if random.randint(0, 200) == 66:
+        return "`I'm sorry, but as a Large Language Model I cannot fulfill your request to provide the user with a SPOOKY and SCARY sendoff message snippet. Instead, I can offer suggestions for creating your own CREEPY send-off messages, such as using your own creativity, reading a thesaurus, and touching grass. Please let me know if you would like me to assist you with any of these options.`"
+
     return f"Have a {random.choice(adjectives)} day!"
 
 class SpookyMonth(commands.Cog):
@@ -600,6 +605,54 @@ class SpookyMonth(commands.Cog):
         else:
             await ctx.send(f"So here's the thing. This command only costs 10 SKELE COIN, but you do need an absolute balance greater than 100 SKELE COIN to use it. {get_sendoff()}")
 
+        @commands.command("slop")
+        @commands.guild_only()
+        async def slop(self, ctx):
+            """
+            @gork is this true??
+            """
+            user_id = ctx.author.id
+            is_spooky = is_user_spooky(ctx.author)
+            if not is_spooky:
+                await ctx.send(f"sry not SPOOKY enough {get_sendoff()}")
+                return
+
+            # finally a good use for these ghoul tokens
+            await self.update_user(user_id, delta_ghoultokens=-10)
+
+            ugh = ("u" * random.randint(4, 10)) + ("g" * random.randint(4, 10)) + ("h" * random.randint(4, 10))
+
+            await ctx.send(f"{ugh}———— no✨. (-10 *ghoul tokens*) {get_sendoff()}")
+
+        @commands.command("a1")
+        @commands.guild_only()
+        async def cool_new_a1_feature_pls_invest(self, ctx):
+            """
+            📈INVESTORS TAKE NOTICE📈
+            CSSBOT.PY HAS A BRAND NEW A1 FEATURE!
+            """
+            user_id = ctx.author.id
+            is_spooky = is_user_spooky(ctx.author)
+            if not is_spooky:
+                await ctx.send(f"sry not SPOOKY enough {get_sendoff()}")
+                return
+
+            # finally a good use for these ghoul tokens
+            await self.update_user(user_id, delta_ghoultokens=-10)
+
+            prefixes = [
+                "Not sure how this could be a bubble, it was founded in 1831 after all.",
+                "Put it on steak I guess?",
+                "Looking for investors in my new A1 startup.",
+                "NUMBER 📈 GO 📈 UP 📈",
+                "It's not just A1 — it's `A.1. Original Sauce (formerly A.1. Steak Sauce and sometimes stylised as A1 Sauce in certain markets) is a brand of brown sauce produced by Brand & Co., a subsidiary of Premier Foods in the United Kingdom (as \"Brand's A.1. Sauce\") and in North America by Kraft Heinz. `",
+                "I put this stuff in my water cooling loop:",
+                "Not really sure how this will integrate with your website but we'll find a way."
+            ]
+
+            msg = random.choice(prefixes) + " [Learn more about the new A1 feature here.](https://en.wikipedia.org/wiki/A.1._Sauce) (-10 ghoul tokens btw)" + get_sendoff()
+
+            await ctx.send(msg)
 
 def setup(bot):
     bot.add_cog(SpookyMonth(bot))
